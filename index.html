@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>Lector Inmersivo</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
+<link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+
+<input type="file" id="fileInput">
+
+<div id="reader"></div>
+
+<div class="controls">
+<button id="prevBtn">◀</button>
+<button id="nextBtn">▶</button>
+<button onclick="zoomIn()">A+</button>
+<button onclick="zoomOut()">A-</button>
+<button onclick="playAudio()">🎧</button>
+<button onclick="stopAudio()">⛔</button>
+<button onclick="summarizeSelection()">🧠</button>
+</div>
+
+<script src="app.js"></script>
+
+<script>
+if('serviceWorker' in navigator){
+ navigator.serviceWorker.register('sw.js');
+}
+</script>
+
+</body>
+</html>
