@@ -69,7 +69,7 @@ function zoomOut(){
 async function playAudio(){
     try{
         const response = await Promise.race([
-            fetch("TU_URL_RENDER_AQUI/tts",{
+            fetch("https://motor-voz-lector.onrender.com/tts",{
                 method:"POST",
                 headers:{
                     "Content-Type":"application/json"
