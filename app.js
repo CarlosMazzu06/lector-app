@@ -1,111 +1,245 @@
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 let currentText = "";
 let currentFontSize = 32;
-let isPlaying = false;
 let currentAudio = null;
+let isPlaying = false;
+let currentBook = null;
+let currentPage = 1;
 
-// URL EXACTA DE TU SERVIDOR EN RENDER
-const RENDER_TTS_URL = "https://motor-voz-lector.onrender.com/tts";
-const RENDER_HEALTH_URL = "https://motor-voz-lector.onrender.com/health";
+const RENDER_URL = "https://motor-voz-lector.onrender.com";
 
-// 1. SISTEMA ANTI-SUEÑO (Heartbeat cada 10 minutos)
-setInterval(async () => {
-    try {
-        await fetch(RENDER_HEALTH_URL);
-        console.log("Manteniendo servidor despierto...");
-    } catch (error) {
-        console.log("Error en latido de servidor.");
-    }
-}, 600000);
 
-// 2. CARGA DE LIBROS
-document.getElementById("fileInput").addEventListener("change", async function(e) {
+// ================================
+// CARGAR ARCHIVO
+// ================================
+document.getElementById("fileInput").addEventListener("change", async function(e){
+
     const file = e.target.files[0];
-    const statusMsg = document.getElementById("mensaje-estado");
 
-    if (!file) return;
-    if (file.size > 150 * 1024 * 1024) {
-        statusMsg.innerText = "El archivo es muy pesado. Máximo 150MB.";
+    if(!file){
         return;
     }
 
-    statusMsg.innerText = "Abriendo libro, por favor espere...";
-    const arrayBuffer = await file.arrayBuffer();
-
-    try {
-        // Leemos solo la primera página para arrancar rápido
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        const page = await pdf.getPage(1); 
-        const textContent = await page.getTextContent();
-        
-        currentText = textContent.items.map(item => item.str).join(' ');
-        
-        // Cambiar pantalla
-        document.getElementById("pantalla-carga").classList.remove("activa");
-        document.getElementById("pantalla-lectura").classList.add("activa");
-        document.getElementById("reader").innerText = currentText || "Documento escaneado sin texto legible.";
-    } catch (err) {
-        statusMsg.innerText = "Error al abrir el PDF.";
+    if(file.type.includes("pdf")){
+        await cargarPDF(file);
     }
+    else if(file.name.endsWith(".epub")){
+        await cargarEPUB(file);
+    }
+    else{
+        alert("Formato no soportado");
+    }
+
 });
 
-// 3. CONTROLES VISUALES
-function zoomIn() { 
-    currentFontSize += 4; 
-    document.getElementById("reader").style.fontSize = currentFontSize + "px"; 
+
+// ================================
+// CARGAR PDF
+// ================================
+async function cargarPDF(file){
+
+    document.getElementById("mensaje-estado").innerText =
+    "Procesando PDF...";
+
+    const buffer = await file.arrayBuffer();
+
+    currentBook = await pdfjsLib.getDocument({
+        data: buffer
+    }).promise;
+
+    mostrarPaginaPDF(currentPage);
+
 }
 
-function zoomOut() { 
-    currentFontSize -= 4; 
-    document.getElementById("reader").style.fontSize = currentFontSize + "px"; 
+
+// ================================
+// MOSTRAR PAGINA PDF
+// ================================
+async function mostrarPaginaPDF(pageNumber){
+
+    const page = await currentBook.getPage(pageNumber);
+
+    const content = await page.getTextContent();
+
+    currentText = content.items.map(item => item.str).join(" ");
+
+    document.getElementById("pantalla-carga").classList.remove("activa");
+    document.getElementById("pantalla-lectura").classList.add("activa");
+
+    document.getElementById("reader").innerHTML = `
+        <div>${currentText}</div>
+    `;
+
+    localStorage.setItem("ultimaPagina", pageNumber);
 }
 
-// 4. MOTOR DE VOZ
-async function playAudio() {
-    if (!currentText || isPlaying) return;
+
+// ================================
+// CARGAR EPUB
+// ================================
+async function cargarEPUB(file){
+
+    document.getElementById("mensaje-estado").innerText =
+    "Procesando EPUB...";
+
+    const buffer = await file.arrayBuffer();
+
+    const book = ePub(buffer);
+
+    const rendition = book.renderTo("reader", {
+        width: "100%",
+        height: "100%"
+    });
+
+    await rendition.display();
+
+    document.getElementById("pantalla-carga").classList.remove("activa");
+    document.getElementById("pantalla-lectura").classList.add("activa");
+}
+
+
+// ================================
+// ZOOM
+// ================================
+function zoomIn(){
+    currentFontSize += 4;
+    document.getElementById("reader").style.fontSize =
+    currentFontSize + "px";
+}
+
+function zoomOut(){
+    currentFontSize -= 4;
+    document.getElementById("reader").style.fontSize =
+    currentFontSize + "px";
+}
+
+
+// ================================
+// RESALTADO PRINCIPAL
+// ================================
+function resaltarPrincipal(){
+
+    document.execCommand("hiliteColor", false, "yellow");
+}
+
+
+// ================================
+// RESALTADO SECUNDARIO
+// ================================
+function resaltarSecundario(){
+
+    document.execCommand("hiliteColor", false, "#5DADE2");
+}
+
+
+// ================================
+// RESUMEN GRATUITO
+// ================================
+function resumirTexto(){
+
+    const palabras = currentText.split(" ");
+
+    const resumen = palabras.slice(0,150).join(" ");
+
+    alert("Resumen automático:\n\n" + resumen + "...");
+}
+
+
+// ================================
+// VOZ RENDER
+// ================================
+async function playAudio(){
+
+    if(isPlaying) return;
+
     isPlaying = true;
 
-    try {
-        const response = await Promise.race([
-            fetch(RENDER_TTS_URL, { 
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: currentText })
-            }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 4000))
-        ]);
+    try{
 
-        if (!response.ok) throw new Error("Fallo en Render");
+        const response = await fetch(`${RENDER_URL}/tts`,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body: JSON.stringify({
+                text: currentText
+            })
+        });
 
         const blob = await response.blob();
-        currentAudio = new Audio(URL.createObjectURL(blob));
-        currentAudio.play();
-        currentAudio.onended = () => { isPlaying = false; };
 
-    } catch (error) {
-        console.warn("Servidor ocupado. Activando voz nativa de emergencia.");
-        vozDeRespaldoLocal();
+        currentAudio = new Audio(
+            URL.createObjectURL(blob)
+        );
+
+        currentAudio.play();
+
+        currentAudio.onended = ()=>{
+            isPlaying = false;
+        };
+
+    }catch(error){
+
+        vozLocal();
     }
 }
 
-function vozDeRespaldoLocal() {
+
+// ================================
+// FALLBACK LOCAL
+// ================================
+function vozLocal(){
+
     const speech = new SpeechSynthesisUtterance(currentText);
-    speech.lang = "es-AR"; // Voz argentina
-    speech.rate = 0.9;     // Velocidad pausada
-    speech.onend = () => { isPlaying = false; };
+
+    speech.lang = "es-AR";
+    speech.rate = 0.9;
+
+    speech.onend = ()=>{
+        isPlaying = false;
+    };
+
     speechSynthesis.speak(speech);
 }
 
-function stopAudio() {
-    isPlaying = false;
+
+// ================================
+// DETENER AUDIO
+// ================================
+function stopAudio(){
+
     speechSynthesis.cancel();
-    if (currentAudio) {
+
+    if(currentAudio){
         currentAudio.pause();
         currentAudio.currentTime = 0;
     }
+
+    isPlaying = false;
 }
 
-function resumirTexto() {
-    alert("Función de resumen IA conectándose pronto...");
+
+// ================================
+// SIGUIENTE PAGINA
+// ================================
+async function paginaSiguiente(){
+
+    if(currentBook && currentPage < currentBook.numPages){
+        currentPage++;
+        mostrarPaginaPDF(currentPage);
+    }
+}
+
+
+// ================================
+// PAGINA ANTERIOR
+// ================================
+async function paginaAnterior(){
+
+    if(currentBook && currentPage > 1){
+        currentPage--;
+        mostrarPaginaPDF(currentPage);
+    }
 }
