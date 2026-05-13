@@ -1,32 +1,53 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lector Premium</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biblioteca Imperial</title>
 
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 </head>
 <body>
 
-<div id="upload-screen" class="screen active">
-    <h1>Lector Premium</h1>
-    <p>Cargar PDF o EPUB</p>
+<div class="overlay"></div>
 
-    <label class="upload-btn">
-        Seleccionar Libro
-        <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
-    </label>
+<!-- Pantalla principal -->
+<div id="homeScreen" class="screen active">
 
-    <p id="status"></p>
+    <div class="hero-card">
+        <h1>Biblioteca Imperial</h1>
+        <p>Lectura clásica inmersiva</p>
+
+        <div class="library-section">
+            <h2>📚 Biblioteca disponible</h2>
+
+            <button onclick="loadRepoBook('libros/libro1.pdf', false)">
+                📖 Libro PDF
+            </button>
+
+            <button onclick="loadRepoBook('libros/libro2.epub', true)">
+                📜 Libro EPUB
+            </button>
+        </div>
+
+        <label class="upload-btn">
+            ✒️ Subir libro personal
+            <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
+        </label>
+
+    </div>
+
 </div>
 
-<div id="reader-screen" class="screen">
-    <div id="reader-container">
+<!-- lector -->
+<div id="readerScreen" class="screen">
+
+    <div id="readerContainer">
         <div id="reader"></div>
     </div>
 
@@ -35,10 +56,12 @@
         <button onclick="nextPage()">▶</button>
         <button onclick="zoomOut()">A-</button>
         <button onclick="zoomIn()">A+</button>
-        <button onclick="playAudio()">🔊</button>
-        <button onclick="stopAudio()">⏹</button>
-        <button onclick="summarizeText()">🧠</button>
+        <button onclick="toggleMusic()">🎵</button>
+        <button onclick="playVoice()">🔊</button>
+        <button onclick="stopVoice()">⏹</button>
+        <button onclick="summarize()">🧠</button>
     </div>
+
 </div>
 
 <script src="app.js"></script>
