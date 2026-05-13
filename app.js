@@ -1,144 +1,161 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc =
 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-let currentPDF=null;
-let currentPage=1;
-let currentText="";
-let fontSize=28;
-let currentAudio=null;
-let darkMode=true;
+let currentText=""
+let currentFontSize=28
+let currentBook=null
+let currentPage=1
+let speechActive=false
+let epubBook=null
+let rendition=null
 
-const RENDER_URL="https://motor-voz-lector.onrender.com";
+const HF_API="https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
 
-document.getElementById("fileInput").addEventListener("change", async(e)=>{
-    const file=e.target.files[0];
-    if(!file) return;
+document.getElementById("fileInput").addEventListener("change",loadBook)
 
-    const fileName=file.name.toLowerCase();
+async function loadBook(e){
+const file=e.target.files[0]
 
-    if(fileName.endsWith(".pdf")){
-        await loadPDF(file);
-    }
-    else if(fileName.endsWith(".epub")){
-        await loadEPUB(file);
-    }
-});
+if(!file) return
 
-async function loadPDF(file){
-    const buffer=await file.arrayBuffer();
-    currentPDF=await pdfjsLib.getDocument({data:buffer}).promise;
-    currentPage=1;
-    await renderPDFPage(currentPage);
+if(file.name.endsWith(".pdf")){
+await loadPDF(file)
+}
+else if(file.name.endsWith(".epub")){
+await loadEPUB(file)
+}
 }
 
-async function renderPDFPage(pageNum){
-    const page=await currentPDF.getPage(pageNum);
-    const text=await page.getTextContent();
+async function loadPDF(file){
+const buffer=await file.arrayBuffer()
 
-    let formatted="";
-    currentText="";
+currentBook=await pdfjsLib.getDocument({
+data:buffer
+}).promise
 
-    text.items.forEach(item=>{
-        formatted+=`<p>${item.str}</p>`;
-        currentText+=item.str+" ";
-    });
+currentPage=1
 
-    showReader(formatted);
+renderPDFPage()
+
+document.getElementById("uploadScreen").classList.remove("active")
+document.getElementById("readerScreen").classList.add("active")
+}
+
+async function renderPDFPage(){
+const page=await currentBook.getPage(currentPage)
+const content=await page.getTextContent()
+
+let text=content.items.map(i=>i.str).join(" ")
+
+currentText=text
+
+document.getElementById("reader").innerHTML=
+`<p>${text}</p>`
+
+saveProgress()
 }
 
 async function loadEPUB(file){
-    const buffer=await file.arrayBuffer();
+const buffer=await file.arrayBuffer()
 
-    document.getElementById("reader").innerHTML="";
+epubBook=ePub(buffer)
 
-    const book=ePub(buffer);
+rendition=epubBook.renderTo("reader",{
+width:"100%",
+height:"100%",
+flow:"scrolled-doc"
+})
 
-    const rendition=book.renderTo("reader",{
-        width:"100%",
-        height:"100%",
-        flow:"scrolled-doc"
-    });
+await rendition.display()
 
-    await rendition.display();
-
-    showReader();
+document.getElementById("uploadScreen").classList.remove("active")
+document.getElementById("readerScreen").classList.add("active")
 }
 
-function showReader(html=""){
-    document.getElementById("uploadScreen").classList.remove("active");
-    document.getElementById("readerScreen").classList.add("active");
+document.addEventListener("click",(e)=>{
+if(!e.target.closest("#floatingMenu")){
+const menu=document.getElementById("floatingMenu")
+menu.style.display=
+menu.style.display==="flex" ? "none":"flex"
+}
+})
 
-    if(html){
-        document.getElementById("reader").innerHTML=html;
-    }
+function increaseFont(){
+currentFontSize+=4
+document.getElementById("reader").style.fontSize=currentFontSize+"px"
+localStorage.setItem("fontSize",currentFontSize)
 }
 
-function nextPage(){
-    if(currentPDF && currentPage<currentPDF.numPages){
-        currentPage++;
-        renderPDFPage(currentPage);
-    }
+function decreaseFont(){
+currentFontSize-=4
+document.getElementById("reader").style.fontSize=currentFontSize+"px"
+localStorage.setItem("fontSize",currentFontSize)
 }
 
-function prevPage(){
-    if(currentPDF && currentPage>1){
-        currentPage--;
-        renderPDFPage(currentPage);
-    }
+function highlightText(){
+const selection=window.getSelection()
+
+if(selection.toString()){
+document.execCommand("hiliteColor",false,"yellow")
+saveProgress()
+}
 }
 
-function zoomIn(){
-    fontSize+=4;
-    document.getElementById("reader").style.fontSize=fontSize+"px";
+function toggleVoice(){
+if(speechActive){
+speechSynthesis.cancel()
+speechActive=false
+return
 }
 
-function zoomOut(){
-    fontSize-=4;
-    document.getElementById("reader").style.fontSize=fontSize+"px";
+let text=window.getSelection().toString() || currentText
+
+let speech=new SpeechSynthesisUtterance(text)
+
+speech.lang="es-AR"
+speech.rate=0.9
+
+speech.onend=()=>{
+speechActive=false
 }
 
-function toggleTheme(){
-    document.body.classList.toggle("sepia");
-}
-
-async function playAudio(){
-    try{
-        const response=await fetch(`${RENDER_URL}/tts`,{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json"
-            },
-            body:JSON.stringify({
-                text:currentText
-            })
-        });
-
-        const blob=await response.blob();
-
-        currentAudio=new Audio(URL.createObjectURL(blob));
-        currentAudio.play();
-
-    }catch(err){
-        fallbackVoice();
-    }
-}
-
-function fallbackVoice(){
-    const speech=new SpeechSynthesisUtterance(currentText);
-    speech.lang="es-AR";
-    speech.rate=0.9;
-    speechSynthesis.speak(speech);
-}
-
-function stopAudio(){
-    speechSynthesis.cancel();
-
-    if(currentAudio){
-        currentAudio.pause();
-        currentAudio.currentTime=0;
-    }
+speechActive=true
+speechSynthesis.speak(speech)
 }
 
 async function summarizeText(){
-    alert("Próxima integración con HuggingFace gratuita.");
+let text=window.getSelection().toString() || currentText
+
+if(text.length<200){
+alert("Selecciona más texto")
+return
+}
+
+try{
+const response=await fetch(HF_API,{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+inputs:text.substring(0,2000)
+})
+})
+
+const data=await response.json()
+
+alert(data[0].summary_text)
+}
+catch{
+alert("Servicio ocupado")
+}
+}
+
+function toggleTheme(){
+document.body.classList.toggle("sepia")
+}
+
+function saveProgress(){
+localStorage.setItem("page",currentPage)
+localStorage.setItem("content",document.getElementById("reader").innerHTML)
 }
