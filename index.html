@@ -1,48 +1,68 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lector Inmersivo</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="style.css">
-    
-    <!-- Librerías de procesamiento de libros -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lector Inmersivo</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 </head>
+
 <body>
 
-    <!-- Pantalla de inicio -->
-    <div id="pantalla-carga" class="pantalla activa">
-        <label for="fileInput" class="boton-gigante">CARGAR LIBRO</label>
-        <input type="file" id="fileInput" accept="application/pdf, application/epub+zip" style="display: none;">
-        <p id="mensaje-estado"></p>
+<div id="pantalla-carga" class="pantalla activa">
+
+    <label for="fileInput" class="boton-gigante">
+        CARGAR LIBRO
+    </label>
+
+    <input
+        type="file"
+        id="fileInput"
+        accept=".pdf,.epub"
+        hidden
+    >
+
+    <p id="mensaje-estado"></p>
+
+</div>
+
+
+<div id="pantalla-lectura" class="pantalla">
+
+    <div id="reader" contenteditable="true"></div>
+
+    <div class="controles">
+
+        <button onclick="paginaAnterior()">◀</button>
+        <button onclick="paginaSiguiente()">▶</button>
+
+        <button onclick="zoomOut()">A-</button>
+        <button onclick="zoomIn()">A+</button>
+
+        <button onclick="resaltarPrincipal()">🟡</button>
+        <button onclick="resaltarSecundario()">🔵</button>
+
+        <button onclick="playAudio()">🔊</button>
+        <button onclick="stopAudio()">⏹</button>
+
+        <button onclick="resumirTexto()">🧠</button>
+
     </div>
 
-    <!-- Pantalla de lectura -->
-    <div id="pantalla-lectura" class="pantalla">
-        <div id="reader"></div>
-        
-        <!-- Controles fijos en la parte inferior -->
-        <div class="controles">
-            <button onclick="zoomOut()" class="btn-circulo">A-</button>
-            <button onclick="zoomIn()" class="btn-circulo">A+</button>
-            <button onclick="playAudio()" class="btn-accion btn-play">▶ ESCUCHAR</button>
-            <button onclick="stopAudio()" class="btn-accion btn-stop">■ DETENER</button>
-            <button onclick="resumirTexto()" class="btn-accion btn-ia">🧠 RESUMIR</button>
-        </div>
-    </div>
+</div>
 
-    <script src="app.js"></script>
+<script src="app.js"></script>
 
-    <!-- Activación de PWA -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-    </script>
+<script>
+if ("serviceWorker" in navigator){
+    navigator.serviceWorker.register("sw.js");
+}
+</script>
+
 </body>
 </html>
