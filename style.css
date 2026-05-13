@@ -1,27 +1,27 @@
 body{
     margin:0;
-    background:black;
+    background:#111;
     color:white;
     font-family:Arial;
 }
 
-.pantalla{
+.screen{
     display:none;
+    width:100vw;
+    height:100vh;
 }
 
-.activa{
-    display:block;
-}
-
-#pantalla-carga{
-    text-align:center;
-    margin-top:100px;
+.active{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
 }
 
 .upload-btn{
     background:green;
     padding:20px;
-    border-radius:15px;
+    border-radius:12px;
     cursor:pointer;
 }
 
@@ -34,23 +34,27 @@ body{
 #reader{
     width:90%;
     margin:auto;
-    font-size:28px;
-    line-height:1.7;
+    font-size:32px;
+    line-height:1.8;
 }
 
 .dock{
     position:fixed;
-    bottom:10px;
-    width:100%;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#222;
+    padding:20px;
+    border-radius:20px;
     display:flex;
-    justify-content:center;
     gap:10px;
-    z-index:9999;
 }
 
 .dock button{
-    padding:20px;
-    font-size:20px;
+    width:60px;
+    height:60px;
     border:none;
-    border-radius:12px;
+    border-radius:50%;
+    font-size:22px;
+    cursor:pointer;
 }
