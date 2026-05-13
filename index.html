@@ -1,44 +1,44 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lector Premium</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lector Premium</title>
 
-<link rel="stylesheet" href="style.css">
-<link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 </head>
-
 <body>
 
-<div id="pantalla-carga" class="pantalla activa">
+<div id="upload-screen" class="screen active">
     <h1>Lector Premium</h1>
-    <label for="fileInput" class="upload-btn">
-        CARGAR PDF / EPUB
+    <p>Cargar PDF o EPUB</p>
+
+    <label class="upload-btn">
+        Seleccionar Libro
+        <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
     </label>
-    <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
+
     <p id="status"></p>
 </div>
 
-<div id="pantalla-lectura" class="pantalla">
-
+<div id="reader-screen" class="screen">
     <div id="reader-container">
         <div id="reader"></div>
     </div>
 
     <div class="dock">
-        <button onclick="paginaAnterior()">⬅</button>
-        <button onclick="paginaSiguiente()">➡</button>
+        <button onclick="prevPage()">◀</button>
+        <button onclick="nextPage()">▶</button>
         <button onclick="zoomOut()">A-</button>
         <button onclick="zoomIn()">A+</button>
         <button onclick="playAudio()">🔊</button>
         <button onclick="stopAudio()">⏹</button>
-        <button onclick="resumirTexto()">🧠</button>
+        <button onclick="summarizeText()">🧠</button>
     </div>
-
 </div>
 
 <script src="app.js"></script>
