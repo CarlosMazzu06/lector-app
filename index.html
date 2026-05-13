@@ -17,34 +17,29 @@
 <body>
 
 <div class="overlay"></div>
-
 <div id="loader" class="loader hidden">Cargando obra...</div>
 
 <div id="homeScreen" class="screen active hero-screen">
     <div class="hero-card">
         <div class="hero-mark">✒</div>
         <h1>Santuario Literario</h1>
-        <p>Biblioteca elegante, lectura inmersiva y música clásica directa</p>
+        <p>Biblioteca elegante, lectura inmersiva y música clásica</p>
 
-        <div class="section-title">Biblioteca del repositorio</div>
+        <div class="section-title">Colección del repositorio</div>
         <div id="bookGrid" class="book-grid"></div>
 
-        <div class="section-title">Cargar obra personal</div>
+        <div class="section-title">Cargar tomo personal</div>
         <label class="upload-btn">
             ✒ Abrir PDF / EPUB
             <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
         </label>
-
-        <div class="music-hint">
-            🎼 Música clásica directa desde archivo público estable
-        </div>
     </div>
 </div>
 
 <div id="readerScreen" class="screen hidden">
     <div class="reader-topbar">
         <div id="currentTitle" class="current-title">Lectura</div>
-        <button class="home-btn" onclick="goHome()" title="Inicio">🏠</button>
+        <button class="home-btn" onclick="goHome()" title="Volver a la biblioteca">🏠</button>
     </div>
 
     <div id="readerContainer">
@@ -52,7 +47,7 @@
     </div>
 
     <div id="musicPanel" class="music-panel hidden">
-        <div class="panel-title">Música clásica</div>
+        <div class="panel-title">Gramófono</div>
         <select id="musicSelect" class="music-select"></select>
         <div class="panel-actions">
             <button onclick="playSelectedMusic()" class="panel-btn play">Reproducir</button>
@@ -62,14 +57,14 @@
     </div>
 
     <div class="dock">
-        <button onclick="prevPage()" title="Anterior">◀</button>
-        <button onclick="nextPage()" title="Siguiente">▶</button>
-        <button onclick="zoomOut()" title="A-">A-</button>
-        <button onclick="zoomIn()" title="A+">A+</button>
-        <button onclick="toggleMusicPanel()" title="Música">🎼</button>
-        <button onclick="playVoice()" title="Voz">🔊</button>
-        <button onclick="stopVoice()" title="Detener voz">⏹</button>
-        <button onclick="summarizeText()" title="Resumen">🧠</button>
+        <button onclick="prevPage()" title="Página anterior">◀</button>
+        <button onclick="nextPage()" title="Página siguiente">▶</button>
+        <button onclick="zoomOut()" title="Reducir texto">A-</button>
+        <button onclick="zoomIn()" title="Aumentar texto">A+</button>
+        <button onclick="toggleMusicPanel()" title="Abrir gramófono">🎼</button>
+        <button onclick="playVoice()" title="Leer en voz alta">🔊</button>
+        <button onclick="stopVoice()" title="Silenciar voz">⏹</button>
+        <button onclick="summarizeText()" title="Resumen inteligente">🧠</button>
     </div>
 </div>
 
