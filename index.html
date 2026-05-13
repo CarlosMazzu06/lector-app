@@ -8,46 +8,47 @@
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.json">
 
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 </head>
+
 <body>
 
-<div class="overlay"></div>
+<div class="hero-screen" id="pantalla-carga">
 
-<!-- Pantalla principal -->
-<div id="homeScreen" class="screen active">
+    <div class="overlay"></div>
 
-    <div class="hero-card">
-        <h1>Biblioteca Imperial</h1>
-        <p>Lectura clásica inmersiva</p>
+    <div class="hero-content">
+        <h1>✒ Biblioteca Imperial</h1>
+        <p>Un santuario moderno para la lectura</p>
 
-        <div class="library-section">
-            <h2>📚 Biblioteca disponible</h2>
-
-            <button onclick="loadRepoBook('libros/libro1.pdf', false)">
-                📖 Libro PDF
+        <div class="book-list">
+            <button onclick="cargarDesdeRepo('book/libro1.pdf', false)">
+                📖 Leer PDF
             </button>
 
-            <button onclick="loadRepoBook('libros/libro2.epub', true)">
-                📜 Libro EPUB
+            <button onclick="cargarDesdeRepo('book/libro2.epub', true)">
+                📚 Leer EPUB
             </button>
         </div>
 
-        <label class="upload-btn">
-            ✒️ Subir libro personal
-            <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
-        </label>
+        <button onclick="toggleRadio()" class="radio-btn">
+            🎼 Música Clásica
+        </button>
 
+        <label class="upload-btn">
+            ✒ Subir libro personal
+            <input type="file" id="fileInput" hidden accept=".pdf,.epub">
+        </label>
     </div>
 
 </div>
 
-<!-- lector -->
-<div id="readerScreen" class="screen">
-
-    <div id="readerContainer">
+<div id="pantalla-lectura" class="hidden">
+    <div id="reader-container">
         <div id="reader"></div>
     </div>
 
@@ -56,12 +57,10 @@
         <button onclick="nextPage()">▶</button>
         <button onclick="zoomOut()">A-</button>
         <button onclick="zoomIn()">A+</button>
-        <button onclick="toggleMusic()">🎵</button>
         <button onclick="playVoice()">🔊</button>
         <button onclick="stopVoice()">⏹</button>
-        <button onclick="summarize()">🧠</button>
+        <button onclick="summarizeText()">🧠</button>
     </div>
-
 </div>
 
 <script src="app.js"></script>
