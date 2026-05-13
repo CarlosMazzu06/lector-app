@@ -2,244 +2,299 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 let currentText = "";
-let currentFontSize = 32;
-let currentAudio = null;
-let isPlaying = false;
 let currentBook = null;
 let currentPage = 1;
+let currentFontSize = localStorage.getItem("fontSize") || 34;
+let currentAudio = null;
+let isPlaying = false;
 
 const RENDER_URL = "https://motor-voz-lector.onrender.com";
 
+document.getElementById("reader").style.fontSize =
+currentFontSize + "px";
 
-// ================================
-// CARGAR ARCHIVO
-// ================================
-document.getElementById("fileInput").addEventListener("change", async function(e){
+// ----------------------------
+// ANTISLEEP RENDER
+// ----------------------------
+setInterval(async () => {
+    try {
+        await fetch(`${RENDER_URL}/health`);
+    } catch(e){}
+},600000);
 
+// ----------------------------
+// CARGAR LIBRO
+// ----------------------------
+document.getElementById("fileInput").addEventListener("change", async (e)=>{
     const file = e.target.files[0];
+    const msj = document.getElementById("mensaje-estado");
 
-    if(!file){
-        return;
-    }
+    if(!file) return;
 
-    if(file.type.includes("pdf")){
-        await cargarPDF(file);
-    }
-    else if(file.name.endsWith(".epub")){
-        await cargarEPUB(file);
-    }
-    else{
-        alert("Formato no soportado");
-    }
+    localStorage.setItem("lastBookName", file.name);
 
+    msj.innerText="Cargando libro...";
+
+    try{
+        if(file.name.toLowerCase().endsWith(".pdf")){
+            await cargarPDF(file);
+        }
+        else if(file.name.toLowerCase().endsWith(".epub")){
+            await cargarEPUB(file);
+        }
+        else{
+            msj.innerText="Solo PDF o EPUB";
+        }
+    }catch(err){
+        msj.innerText="Error al abrir archivo";
+        console.log(err);
+    }
 });
 
-
-// ================================
-// CARGAR PDF
-// ================================
+// ----------------------------
+// PDF
+// ----------------------------
 async function cargarPDF(file){
-
-    document.getElementById("mensaje-estado").innerText =
-    "Procesando PDF...";
-
     const buffer = await file.arrayBuffer();
 
     currentBook = await pdfjsLib.getDocument({
         data: buffer
     }).promise;
 
-    mostrarPaginaPDF(currentPage);
+    currentPage =
+    parseInt(localStorage.getItem("lastPage")) || 1;
 
+    await mostrarPaginaPDF(currentPage);
 }
 
-
-// ================================
-// MOSTRAR PAGINA PDF
-// ================================
 async function mostrarPaginaPDF(pageNumber){
 
     const page = await currentBook.getPage(pageNumber);
 
     const content = await page.getTextContent();
 
-    currentText = content.items.map(item => item.str).join(" ");
+    currentText = content.items.map(
+        item=>item.str
+    ).join(" ");
 
-    document.getElementById("pantalla-carga").classList.remove("activa");
-    document.getElementById("pantalla-lectura").classList.add("activa");
+    if(currentText.trim().length < 20){
+        currentText =
+        "Este PDF parece escaneado como imagen. Para máxima compatibilidad use PDF con texto seleccionable.";
+    }
 
-    document.getElementById("reader").innerHTML = `
-        <div>${currentText}</div>
-    `;
+    document.getElementById("pantalla-carga")
+    .classList.remove("activa");
 
-    localStorage.setItem("ultimaPagina", pageNumber);
+    document.getElementById("pantalla-lectura")
+    .classList.add("activa");
+
+    document.getElementById("reader").innerHTML=
+    `<div>${currentText}</div>`;
+
+    document.getElementById("reader").scrollTop=0;
+
+    localStorage.setItem("lastPage",pageNumber);
 }
 
-
-// ================================
-// CARGAR EPUB
-// ================================
+// ----------------------------
+// EPUB
+// ----------------------------
 async function cargarEPUB(file){
-
-    document.getElementById("mensaje-estado").innerText =
-    "Procesando EPUB...";
-
     const buffer = await file.arrayBuffer();
 
     const book = ePub(buffer);
 
-    const rendition = book.renderTo("reader", {
-        width: "100%",
-        height: "100%"
+    const rendition = book.renderTo("reader",{
+        width:"100%",
+        height:"100%"
     });
 
     await rendition.display();
 
-    document.getElementById("pantalla-carga").classList.remove("activa");
-    document.getElementById("pantalla-lectura").classList.add("activa");
+    document.getElementById("pantalla-carga")
+    .classList.remove("activa");
+
+    document.getElementById("pantalla-lectura")
+    .classList.add("activa");
+
+    currentText =
+    "Seleccione texto dentro del EPUB para escuchar.";
 }
 
+// ----------------------------
+// PAGINAS
+// ----------------------------
+async function paginaSiguiente(){
+    if(currentBook && currentPage < currentBook.numPages){
+        currentPage++;
+        await mostrarPaginaPDF(currentPage);
+    }
+}
 
-// ================================
+async function paginaAnterior(){
+    if(currentBook && currentPage > 1){
+        currentPage--;
+        await mostrarPaginaPDF(currentPage);
+    }
+}
+
+// ----------------------------
 // ZOOM
-// ================================
+// ----------------------------
 function zoomIn(){
-    currentFontSize += 4;
-    document.getElementById("reader").style.fontSize =
-    currentFontSize + "px";
+    currentFontSize =
+    parseInt(currentFontSize)+4;
+
+    document.getElementById("reader")
+    .style.fontSize =
+    currentFontSize+"px";
+
+    localStorage.setItem(
+        "fontSize",
+        currentFontSize
+    );
 }
 
 function zoomOut(){
-    currentFontSize -= 4;
-    document.getElementById("reader").style.fontSize =
-    currentFontSize + "px";
+    currentFontSize =
+    parseInt(currentFontSize)-4;
+
+    document.getElementById("reader")
+    .style.fontSize =
+    currentFontSize+"px";
+
+    localStorage.setItem(
+        "fontSize",
+        currentFontSize
+    );
 }
 
+// ----------------------------
+// RESALTADO ROBUSTO
+// ----------------------------
+function highlight(color){
+    const selected =
+    window.getSelection();
 
-// ================================
-// RESALTADO PRINCIPAL
-// ================================
+    if(selected.toString().length===0){
+        alert("Seleccione texto primero");
+        return;
+    }
+
+    document.execCommand(
+        "backColor",
+        false,
+        color
+    );
+}
+
 function resaltarPrincipal(){
-
-    document.execCommand("hiliteColor", false, "yellow");
+    highlight("yellow");
 }
 
-
-// ================================
-// RESALTADO SECUNDARIO
-// ================================
 function resaltarSecundario(){
-
-    document.execCommand("hiliteColor", false, "#5DADE2");
+    highlight("#6ec6ff");
 }
 
-
-// ================================
-// RESUMEN GRATUITO
-// ================================
+// ----------------------------
+// RESUMEN MEJORADO
+// ----------------------------
 function resumirTexto(){
 
-    const palabras = currentText.split(" ");
+    const texto =
+    window.getSelection().toString()
+    || currentText;
 
-    const resumen = palabras.slice(0,150).join(" ");
+    if(texto.length < 80){
+        alert("Seleccione más texto");
+        return;
+    }
 
-    alert("Resumen automático:\n\n" + resumen + "...");
+    const frases =
+    texto.split(/[.!?]/);
+
+    const resumen =
+    frases
+    .filter(f=>f.length>40)
+    .slice(0,5)
+    .join(". ");
+
+    alert("Resumen:\n\n"+resumen);
 }
 
-
-// ================================
-// VOZ RENDER
-// ================================
+// ----------------------------
+// AUDIO
+// ----------------------------
 async function playAudio(){
 
-    if(isPlaying) return;
+    const texto =
+    window.getSelection().toString()
+    || currentText;
 
-    isPlaying = true;
+    if(!texto || isPlaying) return;
+
+    isPlaying=true;
 
     try{
-
-        const response = await fetch(`${RENDER_URL}/tts`,{
+        const response =
+        await fetch(`${RENDER_URL}/tts`,{
             method:"POST",
             headers:{
                 "Content-Type":"application/json"
             },
-            body: JSON.stringify({
-                text: currentText
+            body:JSON.stringify({
+                text:texto
             })
         });
 
-        const blob = await response.blob();
+        const blob =
+        await response.blob();
 
-        currentAudio = new Audio(
+        currentAudio =
+        new Audio(
             URL.createObjectURL(blob)
         );
 
         currentAudio.play();
 
-        currentAudio.onended = ()=>{
-            isPlaying = false;
-        };
+        currentAudio.onended=()=>{
+            isPlaying=false;
+        }
 
-    }catch(error){
-
-        vozLocal();
+    }catch(e){
+        vozLocal(texto);
     }
 }
 
-
-// ================================
+// ----------------------------
 // FALLBACK LOCAL
-// ================================
-function vozLocal(){
+// ----------------------------
+function vozLocal(texto){
 
-    const speech = new SpeechSynthesisUtterance(currentText);
+    const speech =
+    new SpeechSynthesisUtterance(texto);
 
-    speech.lang = "es-AR";
-    speech.rate = 0.9;
+    speech.lang="es-AR";
+    speech.rate=0.9;
 
-    speech.onend = ()=>{
-        isPlaying = false;
-    };
+    speech.onend=()=>{
+        isPlaying=false;
+    }
 
     speechSynthesis.speak(speech);
 }
 
-
-// ================================
-// DETENER AUDIO
-// ================================
+// ----------------------------
+// STOP
+// ----------------------------
 function stopAudio(){
+
+    isPlaying=false;
 
     speechSynthesis.cancel();
 
     if(currentAudio){
         currentAudio.pause();
-        currentAudio.currentTime = 0;
-    }
-
-    isPlaying = false;
-}
-
-
-// ================================
-// SIGUIENTE PAGINA
-// ================================
-async function paginaSiguiente(){
-
-    if(currentBook && currentPage < currentBook.numPages){
-        currentPage++;
-        mostrarPaginaPDF(currentPage);
-    }
-}
-
-
-// ================================
-// PAGINA ANTERIOR
-// ================================
-async function paginaAnterior(){
-
-    if(currentBook && currentPage > 1){
-        currentPage--;
-        mostrarPaginaPDF(currentPage);
+        currentAudio.currentTime=0;
     }
 }
