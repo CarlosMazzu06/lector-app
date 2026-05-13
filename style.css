@@ -1,93 +1,387 @@
 *{
-margin:0;
-padding:0;
-box-sizing:border-box;
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+:root{
+    --roble:#3a1914;
+    --roble-dark:#1e0c07;
+    --crema:#fdfbf7;
+    --tinta:#2c1408;
+    --oro:#d4af37;
+    --verde:#3a4a28;
+    --vino:#5d2323;
+    --violeta:#4a284a;
 }
 
 body{
-font-family:'Cormorant Garamond', serif;
-overflow:hidden;
-background:#1b120d;
-}
-
-.hero-screen{
-height:100vh;
-background:url('https://images.unsplash.com/photo-1507842217343-583bb7270b66') center/cover;
-position:relative;
-display:flex;
-justify-content:center;
-align-items:center;
+    font-family:'Cormorant Garamond', Georgia, serif;
+    overflow:hidden;
+    background:
+        linear-gradient(rgba(44,20,15,.72), rgba(44,20,15,.72)),
+        url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=2000&auto=format&fit=crop')
+        center/cover fixed;
+    color:var(--crema);
 }
 
 .overlay{
-position:absolute;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.45);
-backdrop-filter:blur(2px);
+    position:fixed;
+    inset:0;
+    background:rgba(44,20,15,.18);
+    backdrop-filter:blur(2px);
+    z-index:0;
 }
 
-.hero-content{
-position:relative;
-z-index:2;
-text-align:center;
-background:rgba(255,248,220,0.92);
-padding:40px;
-border-radius:30px;
-width:90%;
-max-width:700px;
-box-shadow:0 20px 50px rgba(0,0,0,0.5);
-}
-
-h1{
-font-family:'Cinzel', serif;
-font-size:45px;
-color:#3b2416;
-}
-
-p{
-font-size:22px;
-margin:20px 0;
-}
-
-.book-list button,
-.upload-btn,
-.radio-btn{
-display:block;
-width:100%;
-margin:15px 0;
-padding:18px;
-border:none;
-border-radius:20px;
-font-size:20px;
-cursor:pointer;
-background:#6b4226;
-color:white;
-}
-
-.dock{
-position:fixed;
-bottom:20px;
-left:50%;
-transform:translateX(-50%);
-background:#2d1b12;
-padding:15px;
-border-radius:50px;
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-max-width:95vw;
-}
-
-.dock button{
-width:60px;
-height:60px;
-border-radius:50%;
-border:none;
-background:#d4af37;
-font-size:22px;
+.screen{
+    position:relative;
+    z-index:1;
+    width:100vw;
+    height:100vh;
 }
 
 .hidden{
-display:none;
+    display:none !important;
+}
+
+.hero-screen{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:22px;
+}
+
+.hero-card{
+    width:min(760px, 94vw);
+    background:linear-gradient(145deg, var(--roble), var(--roble-dark));
+    border:1px solid rgba(212,175,55,.65);
+    border-radius:36px;
+    box-shadow:0 28px 70px rgba(0,0,0,.6), inset 0 0 30px rgba(212,175,55,.08);
+    padding:34px 28px;
+    text-align:center;
+}
+
+.hero-mark{
+    font-size:52px;
+    color:var(--oro);
+    margin-bottom:8px;
+    filter:drop-shadow(0 0 10px rgba(212,175,55,.45));
+}
+
+.hero-card h1{
+    font-family:'Cinzel', serif;
+    font-size:clamp(32px, 6vw, 48px);
+    letter-spacing:1.4px;
+    line-height:1.05;
+}
+
+.hero-card p{
+    font-size:clamp(18px, 3vw, 24px);
+    color:#f0d79a;
+    font-style:italic;
+    margin-top:10px;
+}
+
+.section-title{
+    margin-top:22px;
+    margin-bottom:12px;
+    font-size:18px;
+    letter-spacing:1px;
+    color:#f7e1a1;
+    text-transform:uppercase;
+}
+
+.book-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+    gap:12px;
+}
+
+.book-card{
+    border:none;
+    border-radius:22px;
+    padding:16px;
+    cursor:pointer;
+    color:var(--crema);
+    background:rgba(253,251,247,.08);
+    border:1px solid rgba(212,175,55,.35);
+    box-shadow:0 10px 24px rgba(0,0,0,.18);
+    text-align:left;
+    transition:transform .15s ease, background .2s ease;
+    min-height:96px;
+}
+
+.book-card:active{
+    transform:scale(.98);
+}
+
+.book-card:hover{
+    background:rgba(212,175,55,.14);
+}
+
+.book-icon{
+    font-size:34px;
+    display:block;
+    margin-bottom:6px;
+}
+
+.book-title{
+    font-size:22px;
+    font-weight:700;
+    line-height:1.1;
+}
+
+.book-meta{
+    font-size:16px;
+    opacity:.9;
+    margin-top:4px;
+}
+
+.upload-btn{
+    display:block;
+    margin-top:14px;
+    background:var(--oro);
+    color:var(--tinta);
+    padding:18px 22px;
+    border-radius:28px;
+    font-size:22px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 12px 24px rgba(0,0,0,.22);
+}
+
+.music-hint{
+    margin-top:16px;
+    font-size:18px;
+    color:#f3e3bd;
+    opacity:.95;
+}
+
+.loader{
+    position:fixed;
+    top:16px;
+    right:16px;
+    z-index:99999;
+    background:rgba(0,0,0,.82);
+    color:#fff;
+    border:1px solid rgba(212,175,55,.45);
+    padding:12px 16px;
+    border-radius:14px;
+    font-size:18px;
+    box-shadow:0 10px 24px rgba(0,0,0,.3);
+}
+
+.reader-topbar{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:20;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    padding:14px 14px 10px;
+    background:linear-gradient(to bottom, rgba(44,20,15,.96), rgba(44,20,15,.72), transparent);
+}
+
+.current-title{
+    font-family:'Cinzel', serif;
+    font-size:18px;
+    letter-spacing:.9px;
+    color:#f6e2a2;
+    max-width:75vw;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.home-btn{
+    border:none;
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    font-size:24px;
+    cursor:pointer;
+    background:rgba(253,251,247,.14);
+    color:var(--crema);
+    border:1px solid rgba(212,175,55,.35);
+}
+
+#readerContainer{
+    width:100%;
+    height:100vh;
+    overflow-y:auto;
+    background:var(--crema);
+    color:var(--tinta);
+    padding-top:72px;
+    padding-bottom:180px;
+    box-shadow:inset 0 0 60px rgba(58,25,20,.14);
+}
+
+#reader{
+    width:min(900px, 92vw);
+    margin:0 auto;
+    font-size:34px;
+    line-height:1.8;
+    padding:24px 0 0;
+    text-align:justify;
+}
+
+#reader p{
+    margin-bottom:26px;
+}
+
+.dock{
+    position:fixed;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:18px;
+    z-index:9999;
+    width:min(980px, 96vw);
+    background:rgba(58,25,20,.94);
+    border:1px solid rgba(212,175,55,.62);
+    box-shadow:0 16px 40px rgba(0,0,0,.5);
+    border-radius:28px;
+    padding:12px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:center;
+    align-items:center;
+    padding-bottom:calc(12px + env(safe-area-inset-bottom));
+}
+
+.dock button{
+    width:62px;
+    height:62px;
+    border:none;
+    border-radius:50%;
+    cursor:pointer;
+    font-size:24px;
+    color:var(--crema);
+    background:rgba(253,251,247,.12);
+    border:1px solid rgba(212,175,55,.25);
+    box-shadow:inset 0 0 12px rgba(0,0,0,.35);
+}
+
+.dock button:active{
+    transform:scale(.92);
+}
+
+.music-panel{
+    position:fixed;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:104px;
+    z-index:9998;
+    width:min(560px, 92vw);
+    background:rgba(20,10,8,.96);
+    border:1px solid rgba(212,175,55,.5);
+    border-radius:26px;
+    padding:16px;
+    box-shadow:0 18px 42px rgba(0,0,0,.5);
+}
+
+.panel-title{
+    font-family:'Cinzel', serif;
+    color:#f7e1a1;
+    font-size:20px;
+    margin-bottom:10px;
+    text-align:center;
+}
+
+.music-select{
+    width:100%;
+    font-size:18px;
+    padding:14px;
+    border-radius:16px;
+    border:1px solid rgba(212,175,55,.35);
+    background:rgba(253,251,247,.08);
+    color:var(--crema);
+    outline:none;
+}
+
+.panel-actions{
+    margin-top:12px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:center;
+}
+
+.panel-btn{
+    border:none;
+    border-radius:18px;
+    padding:12px 18px;
+    font-size:18px;
+    cursor:pointer;
+    color:var(--crema);
+}
+
+.panel-btn.play{ background:var(--verde); }
+.panel-btn.stop{ background:var(--vino); }
+.panel-btn.close{ background:var(--violeta); }
+
+.btn-dock[title="Música"]{
+    background:#8b5cf6;
+}
+
+.btn-dock[title="Voz"]{
+    background:#3a4a28;
+}
+
+.btn-dock[title="Resumen"]{
+    background:#4a284a;
+}
+
+.btn-dock[title="Detener voz"]{
+    background:#5d2323;
+}
+
+.btn-dock[title="Anterior"],
+.btn-dock[title="Siguiente"]{
+    background:#2c1408;
+}
+
+.btn-dock[title="A-"],
+.btn-dock[title="A+"]{
+    background:#6b4d2a;
+}
+
+@media (max-width: 600px){
+    .hero-card{
+        padding:26px 16px;
+        border-radius:28px;
+    }
+
+    .book-grid{
+        grid-template-columns:1fr;
+    }
+
+    #reader{
+        font-size:28px;
+        width:92vw;
+    }
+
+    .dock{
+        width:96vw;
+        gap:8px;
+        border-radius:22px;
+    }
+
+    .dock button{
+        width:56px;
+        height:56px;
+        font-size:21px;
+    }
+
+    .music-panel{
+        bottom:100px;
+    }
+
+    .current-title{
+        font-size:16px;
+    }
 }
