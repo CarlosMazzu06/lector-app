@@ -1,5 +1,6 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+// ── BIBLIOTECA (solo los libros que realmente existen en /book/) ──
 const BOOKS = [
   {
     title: "Zensorialmente",
@@ -9,35 +10,19 @@ const BOOKS = [
   }
 ];
 
-const MUSIC_TRACKS = [
-  {
-    title: "Vivaldi - La Primavera",
-    url: "https://archive.org/download/VivaldiFourSeasonsTheSpring/Vivaldi%20-%20The%20Four%20Seasons%2C%20Spring.mp3"
-  },
-  {
-    title: "Beethoven - Claro de Luna",
-    url: "https://archive.org/download/MoonlightSonata_755/Beethoven-MoonlightSonata.mp3"
-  },
-  {
-    title: "Chopin - Nocturno Op.9",
-    url: "https://archive.org/download/ChopinNocturneOp9No2_201705/Chopin%20-%20Nocturne%20op.9%20No.2.mp3"
-  }
-];
+// ── MÚSICA AMBIENTAL (archivo público, puede cambiarse) ──
+const BG_MUSIC_URL = "https://upload.wikimedia.org/wikipedia/commons/d/d4/Beethoven_Piano_Sonata_No._14_in_C-sharp_minor%2C_%22Moonlight%22%2C_Op._27_No._2_-_I._Adagio_sostenuto.ogg";
 
-let currentPDF = null;
-let currentEpub = null;
-let rendition = null;
-let isEpub = false;
-let currentPage = 1;
-let currentFont = 32;
-let epubFontPercent = 110;
+// ── ESTADO GLOBAL ──
+let currentPDF = null, currentEpub = null, rendition = null;
+let isEpub = false, currentPage = 1, currentText = "", currentFont = 26, epubFontPercent = 100;
 let currentBookTitle = "";
-let extractedTextForSpeech = "";
 let currentObjectUrl = null;
+let musicAudio = new Audio(BG_MUSIC_URL);
+musicAudio.volume = 0.2;
+musicAudio.loop = true;
 
-let musicAudio = new Audio();
-musicAudio.volume = 0.22;
-
+// ── REFERENCIAS DOM ──
 const $ = (id) => document.getElementById(id);
 const els = {
   home: $("homeScreen"),
@@ -46,48 +31,55 @@ const els = {
   readerContainer: $("readerContainer"),
   title: $("currentTitle"),
   loader: $("loader"),
-  musicPanel: $("musicPanel"),
-  musicSelect: $("musicSelect"),
   bookGrid: $("bookGrid"),
   fileInput: $("fileInput"),
-  btnGramofono: $("btn-gramofono")
+  settingsModal: $("settingsModal"),
+  iaModal: $("iaModal"),
+  iaContent: $("iaContent"),
+  voiceSelect: $("voiceSelect"),
+  btnMusica: $("btn-musica")
 };
 
+// ── INICIALIZACIÓN ──
 function init() {
   renderLibrary();
-  renderMusicOptions();
   els.fileInput.addEventListener("change", handleLocalFile);
   window.addEventListener("resize", () => {
-    if (isEpub && rendition) {
-      try {
-        rendition.resize(window.innerWidth, window.innerHeight);
-      } catch (_) {}
-    }
+    if (isEpub && rendition) rendition.resize(window.innerWidth, window.innerHeight);
   });
+  populateVoices();
 }
 init();
 
 function renderLibrary() {
   els.bookGrid.innerHTML = BOOKS.map((b, i) => `
     <button class="btn-libro-repo" onclick="loadRepoBook(${i})">
-      <span class="icono-libro">${b.icon}</span>
-      <div class="titulo-libro">${b.title}</div>
-      <div class="tipo-libro">${b.type.toUpperCase()}</div>
+      <div class="icono-libro">${b.icon}</div>
+      <div class="info-libro">
+        <div class="titulo-libro">${b.title}</div>
+        <div class="tipo-libro">${b.type.toUpperCase()}</div>
+      </div>
     </button>
   `).join("");
 }
 
-function renderMusicOptions() {
-  els.musicSelect.innerHTML = MUSIC_TRACKS.map((t, i) =>
-    `<option value="${i}">${t.title}</option>`
-  ).join("");
+function populateVoices() {
+  const fill = () => {
+    const voices = speechSynthesis.getVoices().filter(v => (v.lang || "").startsWith("es"));
+    const usable = voices.length ? voices : speechSynthesis.getVoices();
+    els.voiceSelect.innerHTML = usable.length
+      ? usable.map((v, i) => `<option value="${i}">${v.name} (${v.lang || "voz"})</option>`).join("")
+      : `<option value="0">Voz del sistema</option>`;
+  };
+  fill();
+  speechSynthesis.onvoiceschanged = fill;
 }
 
+// ── CARGA DESDE REPOSITORIO ──
 async function loadRepoBook(index) {
   const book = BOOKS[index];
   if (!book) return;
-
-  showLoader(`Desempolvando «${book.title}»…`);
+  showLoader(`Abriendo «${book.title}»…`);
   try {
     if (book.type === "epub") {
       await loadEpubFromUrl(book.file, book.title);
@@ -97,25 +89,26 @@ async function loadRepoBook(index) {
       const buffer = await response.arrayBuffer();
       await loadPDF(buffer, book.title);
     }
-  } catch (error) {
-    console.error(error);
-    alert(`No se pudo abrir "${book.file}". Verificá que exista exactamente en /book/ y que el nombre coincida letra por letra.`);
+  } catch (err) {
+    console.error(err);
+    alert(`No se pudo abrir "${book.file}". Verificá que el archivo exista en /book/ exactamente con ese nombre.`);
   } finally {
     hideLoader();
   }
 }
 
+// ── CARGA LOCAL ──
 async function handleLocalFile(e) {
   const file = e.target.files[0];
   if (!file) return;
-
-  showLoader("Analizando pergamino…");
+  showLoader("Procesando archivo…");
   try {
     const buffer = await file.arrayBuffer();
     const name = file.name.toLowerCase();
-
     if (name.endsWith(".epub")) {
-      await loadEpubFromBlob(buffer, file.name);
+      const blob = new Blob([buffer], { type: "application/epub+zip" });
+      currentObjectUrl = URL.createObjectURL(blob);
+      await loadEpubFromUrl(currentObjectUrl, file.name);
     } else if (name.endsWith(".pdf") || file.type === "application/pdf") {
       await loadPDF(buffer, file.name);
     } else {
@@ -130,12 +123,14 @@ async function handleLocalFile(e) {
   }
 }
 
+// ── LÓGICA EPUB ──
 async function loadEpubFromUrl(url, title = "EPUB") {
   cleanup();
   isEpub = true;
   currentBookTitle = title;
   openReader(title);
 
+  // Pequeña pausa para garantizar que el contenedor sea visible
   await new Promise(resolve => setTimeout(resolve, 220));
 
   currentEpub = ePub(url);
@@ -143,64 +138,43 @@ async function loadEpubFromUrl(url, title = "EPUB") {
 
   rendition = currentEpub.renderTo("reader", {
     width: "100%",
-    height: window.innerHeight - 80,
+    height: window.innerHeight - 86,
     spread: "none",
     flow: "scrolled-doc"
   });
 
   rendition.themes.default({
     body: {
-      background: "#F8F1E7",
-      color: "#2A1E17",
-      "font-family": "EB Garamond, Georgia, serif",
-      "line-height": "1.8"
+      background: "#0F0F0F",
+      color: "#E5E7EB",
+      "font-family": "Playfair Display, serif",
+      "line-height": "1.9"
     }
   });
 
-  await rendition.display();
-  applyEpubFont();
-  updateTextForSpeech();
-  currentBookTitle = title;
-  els.title.textContent = title;
-}
-
-async function loadEpubFromBlob(buffer, title = "EPUB") {
-  cleanup();
-  isEpub = true;
-  currentBookTitle = title;
-  openReader(title);
-
-  await new Promise(resolve => setTimeout(resolve, 220));
-
-  const blob = new Blob([buffer], { type: "application/epub+zip" });
-  currentObjectUrl = URL.createObjectURL(blob);
-
-  currentEpub = ePub(currentObjectUrl);
-  await currentEpub.ready;
-
-  rendition = currentEpub.renderTo("reader", {
-    width: "100%",
-    height: window.innerHeight - 80,
-    spread: "none",
-    flow: "scrolled-doc"
-  });
-
-  rendition.themes.default({
-    body: {
-      background: "#F8F1E7",
-      color: "#2A1E17",
-      "font-family": "EB Garamond, Georgia, serif",
-      "line-height": "1.8"
-    }
-  });
+  rendition.on("rendered", updateEpubText);
+  rendition.on("relocated", updateEpubText);
 
   await rendition.display();
   applyEpubFont();
-  updateTextForSpeech();
-  currentBookTitle = title;
+  updateEpubText();
   els.title.textContent = title;
 }
 
+function updateEpubText() {
+  setTimeout(() => {
+    if (!isEpub) return;
+    const iframe = document.querySelector("#reader iframe");
+    if (!iframe) return;
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      const text = doc?.body?.innerText?.trim();
+      if (text) currentText = text;
+    } catch (_) {}
+  }, 450);
+}
+
+// ── LÓGICA PDF ──
 async function loadPDF(buffer, title = "PDF") {
   cleanup();
   isEpub = false;
@@ -215,14 +189,11 @@ async function renderPDFPage() {
   if (!currentPDF) return;
 
   const page = await currentPDF.getPage(currentPage);
-
   const content = await page.getTextContent();
-  extractedTextForSpeech = content.items.map(item => item.str).join(" ").trim();
+  currentText = content.items.map(item => item.str).join(" ").trim();
 
   const viewport = page.getViewport({ scale: 1.55 });
   const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-
   canvas.width = viewport.width;
   canvas.height = viewport.height;
   canvas.style.display = "block";
@@ -231,10 +202,7 @@ async function renderPDFPage() {
   canvas.style.height = "auto";
   canvas.style.borderRadius = "14px";
 
-  await page.render({
-    canvasContext: context,
-    viewport: viewport
-  }).promise;
+  await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
 
   els.readerDiv.innerHTML = "";
   els.readerDiv.appendChild(canvas);
@@ -242,29 +210,29 @@ async function renderPDFPage() {
   els.title.textContent = `${currentBookTitle} · Pág. ${currentPage}`;
 }
 
+// ── LIMPIEZA ──
 function cleanup() {
   if (currentEpub && typeof currentEpub.destroy === "function") {
     try { currentEpub.destroy(); } catch (_) {}
   }
   if (currentObjectUrl) {
     try { URL.revokeObjectURL(currentObjectUrl); } catch (_) {}
+    currentObjectUrl = null;
   }
-
   currentPDF = null;
   currentEpub = null;
   rendition = null;
   currentPage = 1;
   currentText = "";
-  extractedTextForSpeech = "";
-  currentObjectUrl = null;
   els.readerDiv.innerHTML = "";
 }
 
+// ── CAMBIO DE PANTALLAS ──
 function openReader(title) {
   els.home.classList.add("hidden");
   els.readerScreen.classList.remove("hidden");
   els.title.textContent = title || "Lectura";
-  closeMusicPanel();
+  closeModals();
 }
 
 function goHome() {
@@ -272,14 +240,15 @@ function goHome() {
   stopMusic();
   els.readerScreen.classList.add("hidden");
   els.home.classList.remove("hidden");
-  closeMusicPanel();
+  closeModals();
 }
 
+// ── NAVEGACIÓN ──
 async function nextPage() {
   stopVoice();
   if (isEpub && rendition) {
     await rendition.next();
-    updateTextForSpeech();
+    updateEpubText();
   } else if (currentPDF && currentPage < currentPDF.numPages) {
     currentPage++;
     await renderPDFPage();
@@ -290,159 +259,105 @@ async function prevPage() {
   stopVoice();
   if (isEpub && rendition) {
     await rendition.prev();
-    updateTextForSpeech();
+    updateEpubText();
   } else if (currentPDF && currentPage > 1) {
     currentPage--;
     await renderPDFPage();
   }
 }
 
+// ── ZOOM ──
 function zoomIn() {
   currentFont = Math.min(currentFont + 4, 54);
   epubFontPercent = Math.min(epubFontPercent + 8, 180);
   applyFontSize();
 }
-
 function zoomOut() {
   currentFont = Math.max(currentFont - 4, 24);
   epubFontPercent = Math.max(epubFontPercent - 8, 80);
   applyFontSize();
 }
-
 function applyFontSize() {
   if (isEpub && rendition && rendition.themes) {
-    try {
-      rendition.themes.fontSize(`${epubFontPercent}%`);
-    } catch (_) {}
+    try { rendition.themes.fontSize(`${epubFontPercent}%`); } catch (_) {}
   } else {
     els.readerDiv.style.fontSize = `${currentFont}px`;
   }
 }
-
 function applyEpubFont() {
   if (rendition && rendition.themes) {
-    try {
-      rendition.themes.fontSize(`${epubFontPercent}%`);
-    } catch (_) {}
+    try { rendition.themes.fontSize(`${epubFontPercent}%`); } catch (_) {}
   }
 }
 
-function updateTextForSpeech() {
-  setTimeout(() => {
-    if (isEpub) {
-      const iframe = document.querySelector("#reader iframe");
-      if (iframe) {
-        try {
-          const doc = iframe.contentDocument || iframe.contentWindow?.document;
-          const text = doc?.body?.innerText?.trim();
-          if (text) extractedTextForSpeech = text;
-        } catch (_) {}
-      }
-    } else if (currentPDF && !extractedTextForSpeech) {
-      // ya viene cargado desde renderPDFPage()
-    }
-  }, 450);
-}
-
-function getTextoOperativo() {
-  let selected = "";
-
-  if (isEpub) {
-    const iframe = document.querySelector("#reader iframe");
-    if (iframe) {
-      try {
-        selected = iframe.contentWindow?.getSelection?.().toString().trim() || "";
-        if (!selected) {
-          const doc = iframe.contentDocument || iframe.contentWindow?.document;
-          selected = doc?.body?.innerText?.trim() || "";
-        }
-      } catch (_) {}
-    }
+// ── MÚSICA ──
+function toggleMusic() {
+  if (musicAudio.paused) {
+    musicAudio.play()
+      .then(() => els.btnMusica.classList.add("activo"))
+      .catch(() => alert("El navegador bloqueó la música. Presiona de nuevo."));
   } else {
-    selected = window.getSelection().toString().trim() || "";
-  }
-
-  return selected || extractedTextForSpeech || currentText || "";
-}
-
-function toggleMusicPanel() {
-  els.musicPanel.classList.toggle("hidden");
-}
-
-function closeMusicPanel() {
-  els.musicPanel.classList.add("hidden");
-}
-
-async function playSelectedMusic() {
-  const track = MUSIC_TRACKS[Number(els.musicSelect.value)];
-  if (!track) return;
-
-  stopMusic();
-  musicAudio = new Audio(track.url);
-  musicAudio.volume = 0.22;
-  musicAudio.loop = true;
-  musicAudio.preload = "auto";
-
-  try {
-    await musicAudio.play();
-    els.btnGramofono.classList.add("activo");
-  } catch (error) {
-    alert("El navegador bloqueó la reproducción. Presioná 'Reproducir' otra vez.");
-  }
-}
-
-function stopMusic() {
-  try {
     musicAudio.pause();
-    musicAudio.currentTime = 0;
-    els.btnGramofono.classList.remove("activo");
-  } catch (_) {}
+    els.btnMusica.classList.remove("activo");
+  }
+}
+function stopMusic() {
+  musicAudio.pause();
+  musicAudio.currentTime = 0;
+  els.btnMusica.classList.remove("activo");
 }
 
+// ── VOZ AUTOMÁTICA ──
 function playVoice() {
-  const text = getTextoOperativo();
-  if (!text || text.length < 5) {
-    alert("Seleccione un fragmento para leer en voz alta.");
+  if (!currentText || currentText.length < 10) {
+    alert("La página actual no contiene texto suficiente para leer.");
     return;
   }
-
   stopVoice();
-  const utterance = new SpeechSynthesisUtterance(text);
+  const utterance = new SpeechSynthesisUtterance(currentText);
+  const voices = speechSynthesis.getVoices();
+  const voiceIndex = Number(els.voiceSelect.value || 0);
+  utterance.voice = voices[voiceIndex] || voices.find(v => (v.lang || "").startsWith("es")) || null;
   utterance.lang = "es-AR";
   utterance.rate = 0.9;
-  utterance.pitch = 1.0;
   speechSynthesis.speak(utterance);
 }
-
 function stopVoice() {
   speechSynthesis.cancel();
 }
 
+// ── RESUMEN IA ──
 function summarizeText() {
-  const text = getTextoOperativo();
-  if (!text || text.length < 60) {
+  if (!currentText || currentText.length < 100) {
     alert("Seleccione un pasaje más extenso para analizar.");
     return;
   }
-
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-  if (sentences.length <= 2) {
-    alert("🧠 Síntesis literaria:\n\n" + text);
-    return;
+  const sentences = currentText.match(/[^.!?]+[.!?]+/g) || [currentText];
+  let summary = currentText;
+  if (sentences.length > 2) {
+    summary = `${sentences[0].trim()}\n\n${sentences[Math.floor(sentences.length / 2)].trim()}\n\n${sentences[sentences.length - 1].trim()}`;
   }
-
-  const first = sentences[0].trim();
-  const middle = sentences[Math.floor(sentences.length / 2)].trim();
-  const last = sentences[sentences.length - 1].trim();
-
-  alert("🧠 SÍNTESIS LITERARIA:\n\n" + first + "\n\n" + middle + "\n\n" + last);
+  els.iaContent.innerHTML = summary.replace(/\n/g, "<br>");
+  els.iaModal.classList.remove("hidden");
+}
+function closeIaModal() {
+  els.iaModal.classList.add("hidden");
 }
 
+// ── MODALES ──
+function toggleSettings() {
+  els.settingsModal.classList.toggle("hidden");
+}
+function closeModals() {
+  els.settingsModal.classList.add("hidden");
+  els.iaModal.classList.add("hidden");
+}
+
+// ── LOADER ──
 function showLoader(msg) {
   els.loader.textContent = msg;
   els.loader.classList.remove("hidden");
 }
-
 function hideLoader() {
   els.loader.classList.add("hidden");
 }
