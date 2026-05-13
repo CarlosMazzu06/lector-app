@@ -1,9 +1,8 @@
 {
-  "name": "Lector Inmersivo",
-  "short_name": "Lector App",
-  "start_url": "./index.html",
-  "display": "fullscreen",
-  "background_color": "#121212",
-  "theme_color": "#121212",
-  "icons": []
+  "name":"Lector Premium",
+  "short_name":"Lector",
+  "start_url":"./index.html",
+  "display":"standalone",
+  "background_color":"#000000",
+  "theme_color":"#000000"
 }
