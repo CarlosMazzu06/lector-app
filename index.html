@@ -3,67 +3,81 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Biblioteca Imperial</title>
+<title>Santuario Literario</title>
 
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.json">
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 </head>
-
 <body>
 
-<div class="hero-screen" id="pantalla-carga">
+<div class="overlay"></div>
 
-    <div class="overlay"></div>
+<div id="loader" class="loader hidden">Cargando obra...</div>
 
-    <div class="hero-content">
-        <h1>✒ Biblioteca Imperial</h1>
-        <p>Un santuario moderno para la lectura</p>
+<div id="homeScreen" class="screen active hero-screen">
+    <div class="hero-card">
+        <div class="hero-mark">✒</div>
+        <h1>Santuario Literario</h1>
+        <p>Biblioteca elegante, lectura inmersiva y música clásica directa</p>
 
-        <div class="book-list">
-            <button onclick="cargarDesdeRepo('book/libro1.pdf', false)">
-                📖 Leer PDF
-            </button>
+        <div class="section-title">Biblioteca del repositorio</div>
+        <div id="bookGrid" class="book-grid"></div>
 
-            <button onclick="cargarDesdeRepo('book/libro2.epub', true)">
-                📚 Leer EPUB
-            </button>
-        </div>
-
-        <button onclick="toggleRadio()" class="radio-btn">
-            🎼 Música Clásica
-        </button>
-
+        <div class="section-title">Cargar obra personal</div>
         <label class="upload-btn">
-            ✒ Subir libro personal
-            <input type="file" id="fileInput" hidden accept=".pdf,.epub">
+            ✒ Abrir PDF / EPUB
+            <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
         </label>
-    </div>
 
+        <div class="music-hint">
+            🎼 Música clásica directa desde archivo público estable
+        </div>
+    </div>
 </div>
 
-<div id="pantalla-lectura" class="hidden">
-    <div id="reader-container">
+<div id="readerScreen" class="screen hidden">
+    <div class="reader-topbar">
+        <div id="currentTitle" class="current-title">Lectura</div>
+        <button class="home-btn" onclick="goHome()" title="Inicio">🏠</button>
+    </div>
+
+    <div id="readerContainer">
         <div id="reader"></div>
     </div>
 
+    <div id="musicPanel" class="music-panel hidden">
+        <div class="panel-title">Música clásica</div>
+        <select id="musicSelect" class="music-select"></select>
+        <div class="panel-actions">
+            <button onclick="playSelectedMusic()" class="panel-btn play">Reproducir</button>
+            <button onclick="stopMusic()" class="panel-btn stop">Detener</button>
+            <button onclick="toggleMusicPanel()" class="panel-btn close">Cerrar</button>
+        </div>
+    </div>
+
     <div class="dock">
-        <button onclick="prevPage()">◀</button>
-        <button onclick="nextPage()">▶</button>
-        <button onclick="zoomOut()">A-</button>
-        <button onclick="zoomIn()">A+</button>
-        <button onclick="playVoice()">🔊</button>
-        <button onclick="stopVoice()">⏹</button>
-        <button onclick="summarizeText()">🧠</button>
+        <button onclick="prevPage()" title="Anterior">◀</button>
+        <button onclick="nextPage()" title="Siguiente">▶</button>
+        <button onclick="zoomOut()" title="A-">A-</button>
+        <button onclick="zoomIn()" title="A+">A+</button>
+        <button onclick="toggleMusicPanel()" title="Música">🎼</button>
+        <button onclick="playVoice()" title="Voz">🔊</button>
+        <button onclick="stopVoice()" title="Detener voz">⏹</button>
+        <button onclick="summarizeText()" title="Resumen">🧠</button>
     </div>
 </div>
 
 <script src="app.js"></script>
-
+<script>
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(console.error);
+}
+</script>
 </body>
 </html>
