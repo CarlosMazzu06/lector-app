@@ -3,66 +3,85 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lector Inmersivo</title>
+<title>Lector Premium</title>
 
-<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="style.css">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
 
-<div id="pantalla-carga" class="pantalla activa">
+<div id="uploadScreen" class="screen active">
+    <div class="upload-box">
+        <h1>Lector Premium</h1>
+        <p>Leer y escuchar libros fácilmente</p>
 
-    <label for="fileInput" class="boton-gigante">
-        CARGAR LIBRO
-    </label>
+        <label for="fileInput" class="upload-btn">
+            Cargar Libro
+        </label>
 
-    <input
-        type="file"
-        id="fileInput"
-        accept=".pdf,.epub"
-        hidden
-    >
-
-    <p id="mensaje-estado"></p>
-
+        <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
+        <p id="status"></p>
+    </div>
 </div>
 
+<div id="readerScreen" class="screen">
 
-<div id="pantalla-lectura" class="pantalla">
+    <div id="readerContainer">
+        <div id="reader"></div>
+    </div>
 
-    <div id="reader" contenteditable="true"></div>
+    <div class="bottomDock">
 
-    <div class="controles">
+        <button onclick="prevPage()">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Anterior</span>
+        </button>
 
-        <button onclick="paginaAnterior()">◀</button>
-        <button onclick="paginaSiguiente()">▶</button>
+        <button onclick="nextPage()">
+            <i class="fa-solid fa-arrow-right"></i>
+            <span>Siguiente</span>
+        </button>
 
-        <button onclick="zoomOut()">A-</button>
-        <button onclick="zoomIn()">A+</button>
+        <button onclick="zoomOut()">
+            <i class="fa-solid fa-minus"></i>
+            <span>Zoom -</span>
+        </button>
 
-        <button onclick="resaltarPrincipal()">🟡</button>
-        <button onclick="resaltarSecundario()">🔵</button>
+        <button onclick="zoomIn()">
+            <i class="fa-solid fa-plus"></i>
+            <span>Zoom +</span>
+        </button>
 
-        <button onclick="playAudio()">🔊</button>
-        <button onclick="stopAudio()">⏹</button>
+        <button onclick="toggleTheme()">
+            <i class="fa-solid fa-moon"></i>
+            <span>Modo</span>
+        </button>
 
-        <button onclick="resumirTexto()">🧠</button>
+        <button onclick="playAudio()">
+            <i class="fa-solid fa-volume-high"></i>
+            <span>Escuchar</span>
+        </button>
+
+        <button onclick="stopAudio()">
+            <i class="fa-solid fa-stop"></i>
+            <span>Detener</span>
+        </button>
+
+        <button onclick="summarizeText()">
+            <i class="fa-solid fa-brain"></i>
+            <span>Resumen</span>
+        </button>
 
     </div>
 
 </div>
 
 <script src="app.js"></script>
-
-<script>
-if ("serviceWorker" in navigator){
-    navigator.serviceWorker.register("sw.js");
-}
-</script>
-
 </body>
 </html>
