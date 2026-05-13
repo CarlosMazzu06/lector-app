@@ -2,10 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Lector Infinity</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lector Premium</title>
 
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
@@ -13,30 +14,29 @@
 
 <body>
 
-<div id="uploadScreen" class="screen active">
-    <h1>Lector Infinity</h1>
-    <p>Leer y escuchar libros fácilmente</p>
-
-    <label for="fileInput" class="uploadBtn">
-        CARGAR LIBRO
+<div id="pantalla-carga" class="pantalla activa">
+    <h1>Lector Premium</h1>
+    <label for="fileInput" class="upload-btn">
+        CARGAR PDF / EPUB
     </label>
-
     <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
+    <p id="status"></p>
 </div>
 
-<div id="readerScreen" class="screen">
+<div id="pantalla-lectura" class="pantalla">
 
-    <div id="reader"></div>
+    <div id="reader-container">
+        <div id="reader"></div>
+    </div>
 
-    <div id="floatingMenu">
-
-        <button onclick="toggleVoice()">🔊</button>
-        <button onclick="summarizeText()">🧠</button>
-        <button onclick="highlightText()">🖍️</button>
-        <button onclick="increaseFont()">A+</button>
-        <button onclick="decreaseFont()">A-</button>
-        <button onclick="toggleTheme()">🌙</button>
-
+    <div class="dock">
+        <button onclick="paginaAnterior()">⬅</button>
+        <button onclick="paginaSiguiente()">➡</button>
+        <button onclick="zoomOut()">A-</button>
+        <button onclick="zoomIn()">A+</button>
+        <button onclick="playAudio()">🔊</button>
+        <button onclick="stopAudio()">⏹</button>
+        <button onclick="resumirTexto()">🧠</button>
     </div>
 
 </div>
