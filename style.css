@@ -1,86 +1,56 @@
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial;
-}
-
 body{
-background:#0a0a0a;
-color:white;
-overflow:hidden;
+    margin:0;
+    background:black;
+    color:white;
+    font-family:Arial;
 }
 
-.screen{
-display:none;
-width:100vw;
-height:100vh;
+.pantalla{
+    display:none;
 }
 
-.active{
-display:flex;
+.activa{
+    display:block;
 }
 
-#uploadScreen{
-flex-direction:column;
-justify-content:center;
-align-items:center;
-gap:30px;
+#pantalla-carga{
+    text-align:center;
+    margin-top:100px;
 }
 
-#uploadScreen h1{
-font-size:60px;
+.upload-btn{
+    background:green;
+    padding:20px;
+    border-radius:15px;
+    cursor:pointer;
 }
 
-#uploadScreen p{
-font-size:28px;
-color:#aaa;
-}
-
-.uploadBtn{
-background:#22c55e;
-padding:30px 70px;
-font-size:32px;
-border-radius:25px;
-cursor:pointer;
+#reader-container{
+    height:100vh;
+    overflow-y:auto;
+    padding-bottom:120px;
 }
 
 #reader{
-width:100%;
-height:100vh;
-overflow-y:auto;
-padding:40px;
-font-size:28px;
-line-height:1.9;
+    width:90%;
+    margin:auto;
+    font-size:28px;
+    line-height:1.7;
 }
 
-#floatingMenu{
-position:fixed;
-bottom:30px;
-left:50%;
-transform:translateX(-50%);
-background:rgba(0,0,0,.85);
-padding:20px;
-border-radius:40px;
-display:none;
-gap:15px;
+.dock{
+    position:fixed;
+    bottom:10px;
+    width:100%;
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    z-index:9999;
 }
 
-#floatingMenu button{
-width:80px;
-height:80px;
-font-size:30px;
-border:none;
-border-radius:50%;
-cursor:pointer;
-}
-
-.highlight-yellow{
-background:yellow;
-color:black;
-}
-
-.sepia{
-background:#f4ecd8;
-color:black;
+.dock button{
+    padding:20px;
+    font-size:20px;
+    border:none;
+    border-radius:12px;
 }
