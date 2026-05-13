@@ -4,76 +4,51 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 let currentPDF=null;
 let currentPage=1;
 let currentText="";
-let currentFont=34;
+let currentFont=32;
 
-let currentEpub=null;
-let rendition=null;
-let isEpub=false;
+let radio=new Audio(
+"https://stream.live.vc.bbcmedia.co.uk/bbc_radio_three"
+);
 
-let musicTracks=[
-"music/clasica1.mp3",
-"music/clasica2.mp3",
-"music/clasica3.mp3"
-];
+radio.volume=0.2;
 
-let currentTrack=0;
-let audio=new Audio(musicTracks[currentTrack]);
-audio.volume=0.3;
-audio.loop=false;
+function toggleRadio(){
+    if(radio.paused){
+        radio.play();
+    }else{
+        radio.pause();
+    }
+}
 
-audio.onended=()=>{
-currentTrack=(currentTrack+1)%musicTracks.length;
-audio=new Audio(musicTracks[currentTrack]);
-audio.volume=0.3;
-audio.play();
-};
+async function cargarDesdeRepo(path,isEpub){
 
-async function loadRepoBook(path,isEPUB){
     const response=await fetch(path);
     const buffer=await response.arrayBuffer();
 
-    if(isEPUB){
-        await loadEPUB(buffer);
+    if(isEpub){
+        loadEpub(buffer);
     }else{
-        await loadPDF(buffer);
+        loadPdf(buffer);
     }
 }
 
-document.getElementById("fileInput").addEventListener("change", async(e)=>{
-    const file=e.target.files[0];
-    if(!file)return;
-
-    const buffer=await file.arrayBuffer();
-
-    if(file.name.endsWith(".epub")){
-        await loadEPUB(buffer);
-    }else{
-        await loadPDF(buffer);
-    }
-});
-
-async function loadPDF(buffer){
-    isEpub=false;
-
-    currentPDF=await pdfjsLib.getDocument({
-        data:buffer
-    }).promise;
-
+async function loadPdf(buffer){
+    currentPDF=await pdfjsLib.getDocument({data:buffer}).promise;
     currentPage=1;
 
-    await renderPDF();
+    renderPdf();
 
-    showReader();
+    abrirReader();
 }
 
-async function renderPDF(){
+async function renderPdf(){
     const page=await currentPDF.getPage(currentPage);
     const content=await page.getTextContent();
 
     let text="";
 
-    content.items.forEach(i=>{
-        text+=i.str+" ";
+    content.items.forEach(item=>{
+        text += item.str + " ";
     });
 
     currentText=text;
@@ -82,16 +57,12 @@ async function renderPDF(){
     `<p>${text}</p>`;
 }
 
-async function loadEPUB(buffer){
-    isEpub=true;
+async function loadEpub(buffer){
+    abrirReader();
 
-    showReader();
+    let book=ePub(buffer);
 
-    document.getElementById("reader").innerHTML="";
-
-    currentEpub=ePub(buffer);
-
-    rendition=currentEpub.renderTo("reader",{
+    let rendition=book.renderTo("reader",{
         width:"100%",
         height:"100%",
         flow:"scrolled-doc"
@@ -100,78 +71,46 @@ async function loadEPUB(buffer){
     await rendition.display();
 }
 
-function showReader(){
-document.getElementById("homeScreen").classList.remove("active");
-document.getElementById("readerScreen").classList.add("active");
+function abrirReader(){
+    document.getElementById("pantalla-carga").style.display="none";
+    document.getElementById("pantalla-lectura").style.display="block";
 }
 
-async function nextPage(){
-if(isEpub){
-await rendition.next();
-}else{
-if(currentPage<currentPDF.numPages){
-currentPage++;
-await renderPDF();
-}
-}
+function nextPage(){
+    if(currentPDF && currentPage<currentPDF.numPages){
+        currentPage++;
+        renderPdf();
+    }
 }
 
-async function prevPage(){
-if(isEpub){
-await rendition.prev();
-}else{
-if(currentPage>1){
-currentPage--;
-await renderPDF();
-}
-}
+function prevPage(){
+    if(currentPDF && currentPage>1){
+        currentPage--;
+        renderPdf();
+    }
 }
 
 function zoomIn(){
-currentFont+=4;
-document.getElementById("reader").style.fontSize=currentFont+"px";
+    currentFont+=4;
+    document.getElementById("reader").style.fontSize=currentFont+"px";
 }
 
 function zoomOut(){
-currentFont-=4;
-document.getElementById("reader").style.fontSize=currentFont+"px";
-}
-
-function toggleMusic(){
-if(audio.paused){
-audio.play();
-}else{
-audio.pause();
-}
+    currentFont-=4;
+    document.getElementById("reader").style.fontSize=currentFont+"px";
 }
 
 function playVoice(){
-let text=window.getSelection().toString() || currentText;
-
-if(!text)return;
-
-let speech=new SpeechSynthesisUtterance(text);
-speech.lang="es-AR";
-speech.rate=0.9;
-
-window.speechSynthesis.speak(speech);
+    let speech=new SpeechSynthesisUtterance(currentText);
+    speech.lang="es-AR";
+    speech.rate=0.9;
+    speechSynthesis.speak(speech);
 }
 
 function stopVoice(){
-window.speechSynthesis.cancel();
+    speechSynthesis.cancel();
 }
 
-function summarize(){
-let text=window.getSelection().toString() || currentText;
-
-if(text.length<100){
-alert("Seleccione más texto");
-return;
-}
-
-let sentences=text.match(/[^.!?]+[.!?]+/g)||[text];
-
-let summary=sentences.slice(0,3).join(" ");
-
-alert("Resumen IA:\n\n"+summary);
+function summarizeText(){
+    alert("Resumen IA local próximamente.");
 }
