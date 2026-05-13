@@ -3,7 +3,7 @@
   "short_name": "Literario",
   "start_url": "./index.html",
   "display": "fullscreen",
-  "background_color": "#3a1914",
-  "theme_color": "#d4af37",
+  "background_color": "#3E2B22",
+  "theme_color": "#C7A86D",
   "icons": []
 }
