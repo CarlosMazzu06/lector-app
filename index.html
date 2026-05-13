@@ -1,78 +1,91 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Santuario Literario</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Santuario Literario | Edición Nobel</title>
 
-<link rel="stylesheet" href="style.css">
-<link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Tipografías de alta literatura -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 </head>
 <body>
 
-<div class="overlay"></div>
-<div id="loader" class="loader hidden">Cargando obra...</div>
+<div class="overlay-literaria"></div>
 
-<div id="homeScreen" class="screen active hero-screen">
-    <div class="hero-card">
-        <div class="hero-mark">✒</div>
-        <h1>Santuario Literario</h1>
-        <p>Biblioteca elegante, lectura inmersiva y música clásica</p>
+<!-- Indicador de carga -->
+<div id="loader" class="loader hidden">Preparando manuscrito…</div>
 
-        <div class="section-title">Colección del repositorio</div>
-        <div id="bookGrid" class="book-grid"></div>
+<!-- Pantalla de inicio -->
+<div id="homeScreen" class="pantalla activa">
+    <div class="tarjeta-nobel">
+        <div class="sello-pluma">✒️</div>
+        <h1 class="titulo">Santuario Literario</h1>
+        <p class="bajada">Donde la tinta respira y la música envuelve</p>
 
-        <div class="section-title">Cargar tomo personal</div>
-        <label class="upload-btn">
-            ✒ Abrir PDF / EPUB
+        <div class="separador"></div>
+
+        <h2 class="seccion">📚 Obras del repositorio</h2>
+        <div id="bookGrid" class="grid-libros"></div>
+
+        <h2 class="seccion">📜 Cargar pergamino personal</h2>
+        <label class="btn-carga">
+            <span>✍️</span> Seleccionar PDF o EPUB
             <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
         </label>
     </div>
 </div>
 
-<div id="readerScreen" class="screen hidden">
-    <div class="reader-topbar">
-        <div id="currentTitle" class="current-title">Lectura</div>
-        <button class="home-btn" onclick="goHome()" title="Volver a la biblioteca">🏠</button>
+<!-- Pantalla de lectura -->
+<div id="readerScreen" class="pantalla hidden">
+    <div class="barra-lectura">
+        <div id="currentTitle" class="titulo-obra">Obra</div>
+        <button class="btn-volver" onclick="goHome()">🏛️</button>
     </div>
 
     <div id="readerContainer">
         <div id="reader"></div>
     </div>
 
-    <div id="musicPanel" class="music-panel hidden">
-        <div class="panel-title">Gramófono</div>
-        <select id="musicSelect" class="music-select"></select>
-        <div class="panel-actions">
-            <button onclick="playSelectedMusic()" class="panel-btn play">Reproducir</button>
-            <button onclick="stopMusic()" class="panel-btn stop">Detener</button>
-            <button onclick="toggleMusicPanel()" class="panel-btn close">Cerrar</button>
+    <!-- Panel de música -->
+    <div id="musicPanel" class="panel-musica hidden">
+        <h3 class="panel-titulo">🎵 Gramófono</h3>
+        <select id="musicSelect" class="selector-musica"></select>
+        <div class="panel-controles">
+            <button onclick="playSelectedMusic()" class="btn-panel btn-play">▶ Reproducir</button>
+            <button onclick="stopMusic()" class="btn-panel btn-stop">⏹ Detener</button>
+            <button onclick="toggleMusicPanel()" class="btn-panel btn-cerrar">✕ Cerrar</button>
         </div>
     </div>
 
+    <!-- Dock de herramientas -->
     <div class="dock">
-        <button onclick="prevPage()" title="Página anterior">◀</button>
-        <button onclick="nextPage()" title="Página siguiente">▶</button>
-        <button onclick="zoomOut()" title="Reducir texto">A-</button>
-        <button onclick="zoomIn()" title="Aumentar texto">A+</button>
-        <button onclick="toggleMusicPanel()" title="Abrir gramófono">🎼</button>
-        <button onclick="playVoice()" title="Leer en voz alta">🔊</button>
-        <button onclick="stopVoice()" title="Silenciar voz">⏹</button>
-        <button onclick="summarizeText()" title="Resumen inteligente">🧠</button>
+        <button onclick="prevPage()">◀</button>
+        <button onclick="nextPage()">▶</button>
+        <span class="separador-dock"></span>
+        <button onclick="zoomOut()">A-</button>
+        <button onclick="zoomIn()">A+</button>
+        <span class="separador-dock"></span>
+        <button onclick="toggleMusicPanel()" id="btn-gramofono">🎵</button>
+        <button onclick="playVoice()">🗣️</button>
+        <button onclick="stopVoice()">⏹</button>
+        <button onclick="summarizeText()">🧠</button>
     </div>
 </div>
 
 <script src="app.js"></script>
 <script>
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").catch(console.error);
-}
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js").catch(console.error);
+    }
 </script>
 </body>
 </html>
