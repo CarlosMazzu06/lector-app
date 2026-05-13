@@ -3,79 +3,106 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Santuario Literario | Edición Nobel</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <title>Lector Studio | Awwwards Edition</title>
 
   <link rel="stylesheet" href="style.css" />
   <link rel="manifest" href="manifest.json" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 </head>
 <body>
-  <div class="overlay-literaria"></div>
+  <div class="bg-cinematic"></div>
+  <div class="glass-overlay"></div>
 
-  <div id="loader" class="loader hidden">Preparando manuscrito…</div>
+  <div id="loader" class="loader hidden">Preparando lectura…</div>
 
+  <!-- Pantalla de inicio -->
   <div id="homeScreen" class="pantalla activa">
-    <div class="tarjeta-nobel">
-      <div class="hero-badge">✒️</div>
+    <header class="studio-header">
+      <div class="logo-mark">✒️</div>
       <h1 class="titulo">Santuario Literario</h1>
-      <p class="bajada">Donde la tinta respira y la música envuelve</p>
+      <p class="bajada">Lectura inmersiva · Estética Awwwards</p>
+    </header>
 
-      <div class="separador"></div>
-
-      <h2 class="seccion">📚 Obras del repositorio</h2>
+    <main class="studio-content">
+      <h2 class="seccion-titulo">📚 Obras del repositorio</h2>
       <div id="bookGrid" class="grid-libros"></div>
 
-      <h2 class="seccion">🎼 Gramófono y carga local</h2>
-      <div class="home-actions">
-        <button class="home-action" onclick="toggleMusicPanel()">Abrir gramófono</button>
-        <label class="home-action home-upload">
-          Seleccionar PDF o EPUB
-          <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
-        </label>
-      </div>
+      <div class="divider"></div>
 
-      <p class="home-note">Estética de época, lectura cálida y herramientas grandes para un uso claro.</p>
-    </div>
+      <h2 class="seccion-titulo">📂 Carga local</h2>
+      <label class="btn-subir">
+        <span>➕</span> Seleccionar PDF o EPUB
+        <input type="file" id="fileInput" accept=".pdf,.epub" hidden />
+      </label>
+
+      <p class="home-note">Música ambiental, narrador automático y análisis con un solo toque.</p>
+    </main>
   </div>
 
+  <!-- Pantalla de lectura -->
   <div id="readerScreen" class="pantalla hidden">
-    <div class="barra-lectura">
-      <div id="currentTitle" class="titulo-obra">Obra</div>
-      <button class="btn-volver" onclick="goHome()" title="Regresar al inicio">🏛️</button>
-    </div>
+    <nav class="top-nav">
+      <button class="btn-icon" onclick="goHome()" title="Volver al inicio">✕</button>
+      <div id="currentTitle" class="titulo-obra">Lectura en curso</div>
+      <button class="btn-icon" onclick="toggleSettings()" title="Ajustes de lectura">⚙️</button>
+    </nav>
 
     <div id="readerContainer">
       <div id="reader"></div>
     </div>
 
-    <div id="musicPanel" class="panel-musica hidden">
-      <h3 class="panel-titulo">🎵 Gramófono</h3>
-      <select id="musicSelect" class="selector-musica"></select>
-      <div class="panel-controles">
-        <button onclick="playSelectedMusic()" class="btn-panel btn-play">Reproducir</button>
-        <button onclick="stopMusic()" class="btn-panel btn-stop">Detener</button>
-        <button onclick="toggleMusicPanel()" class="btn-panel btn-cerrar">Cerrar</button>
-      </div>
-    </div>
+    <!-- Dock de herramientas -->
+    <div class="dock-moderno">
+      <button class="dock-btn" onclick="prevPage()" title="Página anterior">◀</button>
+      <button class="dock-btn" onclick="nextPage()" title="Página siguiente">▶</button>
+      <span class="dock-divider"></span>
 
-    <div class="dock">
-      <button onclick="prevPage()" title="Página Anterior">◀</button>
-      <button onclick="nextPage()" title="Página Siguiente">▶</button>
-      <span class="separador-dock"></span>
-      <button onclick="zoomOut()" title="Reducir Letra">A-</button>
-      <button onclick="zoomIn()" title="Aumentar Letra">A+</button>
-      <span class="separador-dock"></span>
-      <button onclick="toggleMusicPanel()" id="btn-gramofono" title="Gramófono">🎵</button>
-      <button onclick="playVoice()" class="btn-narrador" title="Narrador">🗣️</button>
-      <button onclick="stopVoice()" class="btn-silencio" title="Silenciar">⏹</button>
-      <button onclick="summarizeText()" class="btn-cerebro" title="Mente Analítica (IA)">🧠</button>
+      <button class="dock-btn" onclick="toggleMusic()" id="btn-musica" title="Música ambiental">🎵</button>
+      <span class="dock-divider"></span>
+
+      <button class="dock-btn accent-play" onclick="playVoice()" title="Leer página actual">▶️</button>
+      <button class="dock-btn accent-stop" onclick="stopVoice()" title="Detener lectura">⏹️</button>
+      <span class="dock-divider"></span>
+
+      <button class="dock-btn accent-ia" onclick="summarizeText()" title="Analizar página (IA)">🧠</button>
+    </div>
+  </div>
+
+  <!-- Modal de ajustes -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 class="modal-titulo">Ajustes de lectura</h3>
+
+      <div class="setting-group">
+        <label>Tamaño del texto</label>
+        <div class="zoom-controls">
+          <button onclick="zoomOut()">A-</button>
+          <button onclick="zoomIn()">A+</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label>Voz del narrador</label>
+        <select id="voiceSelect" class="modern-select"></select>
+      </div>
+
+      <button class="btn-subir" style="width:100%; margin-top:20px;" onclick="toggleSettings()">Guardar y cerrar</button>
+    </div>
+  </div>
+
+  <!-- Modal de síntesis IA -->
+  <div id="iaModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 class="modal-titulo">🧠 Síntesis de la página</h3>
+      <p id="iaContent" class="ia-texto"></p>
+      <button class="btn-subir" style="width:100%; margin-top:20px;" onclick="closeIaModal()">Entendido</button>
     </div>
   </div>
 
