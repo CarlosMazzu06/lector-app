@@ -1,8 +1,9 @@
 {
-  "name": "Lector Premium",
-  "short_name": "Lector",
+  "name": "Santuario Literario",
+  "short_name": "Literario",
   "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#111111",
-  "theme_color": "#111111"
+  "display": "fullscreen",
+  "background_color": "#3a1914",
+  "theme_color": "#d4af37",
+  "icons": []
 }
