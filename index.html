@@ -1,91 +1,89 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Santuario Literario | Edición Nobel</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Santuario Literario | Edición Nobel</title>
 
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
-    <!-- Tipografías de alta literatura -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 </head>
 <body>
+  <div class="overlay-literaria"></div>
 
-<div class="overlay-literaria"></div>
+  <div id="loader" class="loader hidden">Preparando manuscrito…</div>
 
-<!-- Indicador de carga -->
-<div id="loader" class="loader hidden">Preparando manuscrito…</div>
-
-<!-- Pantalla de inicio -->
-<div id="homeScreen" class="pantalla activa">
+  <div id="homeScreen" class="pantalla activa">
     <div class="tarjeta-nobel">
-        <div class="sello-pluma">✒️</div>
-        <h1 class="titulo">Santuario Literario</h1>
-        <p class="bajada">Donde la tinta respira y la música envuelve</p>
+      <div class="hero-badge">✒️</div>
+      <h1 class="titulo">Santuario Literario</h1>
+      <p class="bajada">Donde la tinta respira y la música envuelve</p>
 
-        <div class="separador"></div>
+      <div class="separador"></div>
 
-        <h2 class="seccion">📚 Obras del repositorio</h2>
-        <div id="bookGrid" class="grid-libros"></div>
+      <h2 class="seccion">📚 Obras del repositorio</h2>
+      <div id="bookGrid" class="grid-libros"></div>
 
-        <h2 class="seccion">📜 Cargar pergamino personal</h2>
-        <label class="btn-carga">
-            <span>✍️</span> Seleccionar PDF o EPUB
-            <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
+      <h2 class="seccion">🎼 Gramófono y carga local</h2>
+      <div class="home-actions">
+        <button class="home-action" onclick="toggleMusicPanel()">Abrir gramófono</button>
+        <label class="home-action home-upload">
+          Seleccionar PDF o EPUB
+          <input type="file" id="fileInput" accept=".pdf,.epub" hidden>
         </label>
-    </div>
-</div>
+      </div>
 
-<!-- Pantalla de lectura -->
-<div id="readerScreen" class="pantalla hidden">
+      <p class="home-note">Estética de época, lectura cálida y herramientas grandes para un uso claro.</p>
+    </div>
+  </div>
+
+  <div id="readerScreen" class="pantalla hidden">
     <div class="barra-lectura">
-        <div id="currentTitle" class="titulo-obra">Obra</div>
-        <button class="btn-volver" onclick="goHome()">🏛️</button>
+      <div id="currentTitle" class="titulo-obra">Obra</div>
+      <button class="btn-volver" onclick="goHome()" title="Regresar al inicio">🏛️</button>
     </div>
 
     <div id="readerContainer">
-        <div id="reader"></div>
+      <div id="reader"></div>
     </div>
 
-    <!-- Panel de música -->
     <div id="musicPanel" class="panel-musica hidden">
-        <h3 class="panel-titulo">🎵 Gramófono</h3>
-        <select id="musicSelect" class="selector-musica"></select>
-        <div class="panel-controles">
-            <button onclick="playSelectedMusic()" class="btn-panel btn-play">▶ Reproducir</button>
-            <button onclick="stopMusic()" class="btn-panel btn-stop">⏹ Detener</button>
-            <button onclick="toggleMusicPanel()" class="btn-panel btn-cerrar">✕ Cerrar</button>
-        </div>
+      <h3 class="panel-titulo">🎵 Gramófono</h3>
+      <select id="musicSelect" class="selector-musica"></select>
+      <div class="panel-controles">
+        <button onclick="playSelectedMusic()" class="btn-panel btn-play">Reproducir</button>
+        <button onclick="stopMusic()" class="btn-panel btn-stop">Detener</button>
+        <button onclick="toggleMusicPanel()" class="btn-panel btn-cerrar">Cerrar</button>
+      </div>
     </div>
 
-    <!-- Dock de herramientas -->
     <div class="dock">
-        <button onclick="prevPage()">◀</button>
-        <button onclick="nextPage()">▶</button>
-        <span class="separador-dock"></span>
-        <button onclick="zoomOut()">A-</button>
-        <button onclick="zoomIn()">A+</button>
-        <span class="separador-dock"></span>
-        <button onclick="toggleMusicPanel()" id="btn-gramofono">🎵</button>
-        <button onclick="playVoice()">🗣️</button>
-        <button onclick="stopVoice()">⏹</button>
-        <button onclick="summarizeText()">🧠</button>
+      <button onclick="prevPage()" title="Página Anterior">◀</button>
+      <button onclick="nextPage()" title="Página Siguiente">▶</button>
+      <span class="separador-dock"></span>
+      <button onclick="zoomOut()" title="Reducir Letra">A-</button>
+      <button onclick="zoomIn()" title="Aumentar Letra">A+</button>
+      <span class="separador-dock"></span>
+      <button onclick="toggleMusicPanel()" id="btn-gramofono" title="Gramófono">🎵</button>
+      <button onclick="playVoice()" class="btn-narrador" title="Narrador">🗣️</button>
+      <button onclick="stopVoice()" class="btn-silencio" title="Silenciar">⏹</button>
+      <button onclick="summarizeText()" class="btn-cerebro" title="Mente Analítica (IA)">🧠</button>
     </div>
-</div>
+  </div>
 
-<script src="app.js"></script>
-<script>
+  <script src="app.js"></script>
+  <script>
     if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("sw.js").catch(console.error);
+      navigator.serviceWorker.register("sw.js").catch(console.error);
     }
-</script>
+  </script>
 </body>
 </html>
