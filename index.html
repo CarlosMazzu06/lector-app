@@ -3,24 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Santuario Literario · Edición Vanguardista</title>
-
-  <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.json" />
+  <title>Santuario Literario</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Playfair+Display:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 </head>
 <body>
-  <div class="bg-cinematic"></div>
+  <div class="bg-wood"></div>
   <div class="glass-overlay"></div>
 
-  <!-- Pantalla de carga -->
+  <!-- Loader -->
   <div id="loader" class="loader hidden">
     <div class="spinner"></div>
     <div id="loaderText" class="loader-text">Preparando manuscrito…</div>
@@ -29,58 +29,57 @@
 
   <!-- Pantalla de inicio -->
   <div id="homeScreen" class="pantalla activa">
-    <header class="studio-header">
-      <div class="logo-mark">✦</div>
-      <h1 class="titulo">Santuario Literario</h1>
-      <p class="bajada">Lectura inmersiva · Reflexión guiada</p>
-    </header>
+    <div class="tarjeta-ejecutiva">
+      <header class="hero">
+        <div class="logo-mark">✑</div>
+        <h1>Santuario Literario</h1>
+        <p class="bajada">Colección privada de lectura inmersiva</p>
+      </header>
 
-    <main class="studio-content">
-      <h2 class="seccion-titulo">Colección</h2>
-      <div id="bookGrid" class="grid-libros"></div>
+      <div class="divider">⚜</div>
 
-      <div class="divider"></div>
+      <h2 class="section-title">Obras del repositorio</h2>
+      <div id="bookGrid" class="book-grid"></div>
 
-      <h2 class="seccion-titulo">Importar obra</h2>
-      <label class="btn-subir">
-        <span class="btn-icon">✑</span> Seleccionar PDF o EPUB
+      <div class="divider">⚜</div>
+
+      <h2 class="section-title">Importar obra local</h2>
+      <label class="btn-pluma">
+        <span>✍</span> Seleccionar PDF o EPUB
         <input type="file" id="fileInput" accept=".pdf,.epub" hidden />
       </label>
-
-      <p class="home-note">Música ambiental, narrador automático y acompañante analítico en un solo toque.</p>
-    </main>
+    </div>
   </div>
 
   <!-- Pantalla de lectura -->
   <div id="readerScreen" class="pantalla hidden">
     <nav class="top-nav">
-      <button class="nav-btn" onclick="goHome()" title="Cerrar libro">✕</button>
-      <div id="currentTitle" class="titulo-obra">Preparando lectura…</div>
-      <button class="nav-btn" onclick="toggleSettings()" title="Ajustes">⚲</button>
+      <button class="nav-btn" onclick="goHome()">✕</button>
+      <div id="currentTitle" class="title-obra">Lectura</div>
+      <button class="nav-btn" onclick="toggleSettings()">⚙</button>
     </nav>
 
     <div id="readerContainer">
       <div id="reader"></div>
     </div>
 
-    <!-- Dock de herramientas -->
-    <div class="dock-moderno">
-      <button class="dock-btn" onclick="prevPage()" title="Página anterior">←</button>
-      <button class="dock-btn" onclick="nextPage()" title="Página siguiente">→</button>
+    <!-- Dock -->
+    <div class="dock">
+      <button onclick="prevPage()">←</button>
+      <button onclick="nextPage()">→</button>
       <span class="dock-divider"></span>
-      <button class="dock-btn" onclick="toggleMusic()" id="btn-musica" title="Música ambiental">♪</button>
+      <button id="btn-musica" onclick="toggleMusic()">♪</button>
+      <button onclick="playVoice()">▶</button>
+      <button onclick="stopVoice()">■</button>
       <span class="dock-divider"></span>
-      <button class="dock-btn accent-play" onclick="playVoice()" title="Leer página actual">▶</button>
-      <button class="dock-btn accent-stop" onclick="stopVoice()" title="Detener narración">■</button>
-      <span class="dock-divider"></span>
-      <button class="dock-btn accent-ia" onclick="summarizeText()" title="Reflexión analítica">✧</button>
+      <button class="accent-ia" onclick="summarizeText()">✧</button>
     </div>
   </div>
 
   <!-- Modal de ajustes -->
   <div id="settingsModal" class="modal hidden">
-    <div class="modal-content liquid-panel">
-      <h3 class="modal-titulo">Ajustes de lectura</h3>
+    <div class="modal-content">
+      <h3 class="modal-title">Ajustes de lectura</h3>
       <div class="setting-group">
         <label>Tamaño del texto</label>
         <div class="zoom-controls">
@@ -88,16 +87,20 @@
           <button onclick="zoomIn()">A+</button>
         </div>
       </div>
-      <button class="btn-subir" style="width:100%; margin-top:20px;" onclick="toggleSettings()">Cerrar</button>
+      <div class="setting-group">
+        <label>Música ambiental</label>
+        <select id="musicSelect" class="select-field"></select>
+      </div>
+      <button class="primary-btn" onclick="toggleSettings()">Cerrar</button>
     </div>
   </div>
 
-  <!-- Modal de Reflexión -->
+  <!-- Modal de reflexión -->
   <div id="iaModal" class="modal hidden">
-    <div class="modal-content liquid-panel ia-panel">
-      <h3 class="modal-titulo" style="color:#E5B05C;">✧ Reflexión de lectura</h3>
-      <div id="iaContent" class="ia-texto"></div>
-      <button class="btn-subir" style="width:100%; margin-top:25px;" onclick="closeIaModal()">Continuar leyendo</button>
+    <div class="modal-content ia-panel">
+      <h3 class="modal-title accent">✧ Reflexión de lectura</h3>
+      <div id="iaContent" class="ia-text"></div>
+      <button class="primary-btn" onclick="closeIaModal()">Continuar leyendo</button>
     </div>
   </div>
 
