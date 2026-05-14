@@ -1,115 +1,115 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Santuario Literario</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Santuario Literario</title>
 
-  <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Playfair+Display:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Playfair+Display:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 </head>
 <body>
-  <div class="bg-wood"></div>
-  <div class="glass-overlay"></div>
+    <div class="bg-wood"></div>
+    <div class="glass-overlay"></div>
 
-  <!-- Loader -->
-  <div id="loader" class="loader hidden">
-    <div class="spinner"></div>
-    <div id="loaderText" class="loader-text">Preparando manuscrito…</div>
-    <div id="loaderSubtext" class="loader-subtext"></div>
-  </div>
-
-  <!-- Pantalla de inicio -->
-  <div id="homeScreen" class="pantalla activa">
-    <div class="tarjeta-ejecutiva">
-      <header class="hero">
-        <div class="logo-mark">✑</div>
-        <h1>Santuario Literario</h1>
-        <p class="bajada">Lectura inmersiva, música ambiental y reflexión guiada</p>
-      </header>
-
-      <div class="divider">⚜</div>
-
-      <h2 class="section-title">Obras del repositorio</h2>
-      <p class="section-desc">Sincronización automática con la nube</p>
-      <div id="bookGrid" class="book-grid"></div>
-
-      <div class="divider">⚜</div>
-
-      <h2 class="section-title">Cargar obra local</h2>
-      <label class="btn-pluma">
-        <span>✍</span> Seleccionar PDF o EPUB
-        <input type="file" id="fileInput" accept=".pdf,.epub" hidden />
-      </label>
-    </div>
-  </div>
-
-  <!-- Pantalla de lectura -->
-  <div id="readerScreen" class="pantalla oculta">
-    <nav class="top-nav">
-      <button class="nav-btn" onclick="goHome()">✕</button>
-      <div id="currentTitle" class="title-obra">Lectura</div>
-      <button class="nav-btn" onclick="toggleSettings()">⚙</button>
-    </nav>
-
-    <div id="readerContainer">
-      <div id="reader"></div>
+    <!-- Loader -->
+    <div id="loader" class="loader hidden">
+        <div class="spinner"></div>
+        <div id="loaderText" class="loader-text">Preparando manuscrito…</div>
+        <div id="loaderSubtext" class="loader-subtext"></div>
     </div>
 
-    <!-- Dock de herramientas -->
-    <div class="dock">
-      <button onclick="prevPage()">←</button>
-      <button onclick="nextPage()">→</button>
-      <span class="dock-divider"></span>
-      <button id="btn-musica" onclick="toggleMusic()">♪</button>
-      <button onclick="playVoice()">▶</button>
-      <button onclick="stopVoice()">■</button>
-      <span class="dock-divider"></span>
-      <button class="accent-ia" onclick="summarizeText()">✧</button>
-    </div>
-  </div>
+    <!-- Pantalla de inicio -->
+    <div id="homeScreen" class="pantalla activa">
+        <div class="tarjeta-ejecutiva">
+            <header class="hero">
+                <div class="logo-mark">✑</div>
+                <h1>Santuario Literario</h1>
+                <p class="bajada">Lectura inmersiva, música ambiental y reflexión guiada</p>
+            </header>
 
-  <!-- Modal de ajustes -->
-  <div id="settingsModal" class="modal hidden">
-    <div class="modal-content">
-      <h3 class="modal-title">Ajustes de lectura</h3>
-      <div class="setting-group">
-        <label>Tamaño del texto</label>
-        <div class="zoom-controls">
-          <button onclick="zoomOut()">A-</button>
-          <button onclick="zoomIn()">A+</button>
+            <div class="divider">⚜</div>
+
+            <h2 class="section-title">Obras del repositorio</h2>
+            <p class="section-desc">Sincronización automática con la carpeta book</p>
+            <div id="bookGrid" class="book-grid"></div>
+
+            <div class="divider">⚜</div>
+
+            <h2 class="section-title">Cargar obra local</h2>
+            <label class="btn-pluma">
+                <span>✍</span> Seleccionar PDF o EPUB
+                <input type="file" id="fileInput" accept=".pdf,.epub" hidden />
+            </label>
         </div>
-      </div>
-      <div class="setting-group">
-        <label>Música ambiental</label>
-        <select id="musicSelect" class="select-field"></select>
-      </div>
-      <button class="primary-btn" onclick="toggleSettings()">Cerrar</button>
     </div>
-  </div>
 
-  <!-- Modal de reflexión -->
-  <div id="iaModal" class="modal hidden">
-    <div class="modal-content ia-panel">
-      <h3 class="modal-title accent">✧ Reflexión de lectura</h3>
-      <div id="iaContent" class="ia-text"></div>
-      <button class="primary-btn" onclick="closeIaModal()">Continuar leyendo</button>
+    <!-- Pantalla de lectura -->
+    <div id="readerScreen" class="pantalla oculta">
+        <nav class="top-nav">
+            <button class="nav-btn" onclick="goHome()" title="Volver al inicio">✕</button>
+            <div id="currentTitle" class="title-obra">Lectura</div>
+            <button class="nav-btn" onclick="toggleSettings()" title="Ajustes">⚙</button>
+        </nav>
+
+        <div id="readerContainer">
+            <div id="reader"></div>
+        </div>
+
+        <!-- Dock de herramientas -->
+        <div class="dock">
+            <button onclick="prevPage()" title="Página anterior">←</button>
+            <button onclick="nextPage()" title="Página siguiente">→</button>
+            <span class="dock-divider"></span>
+            <button id="btn-musica" onclick="toggleMusic()" title="Música ambiental">♪</button>
+            <button onclick="playVoice()" title="Leer en voz alta">▶</button>
+            <button onclick="stopVoice()" title="Detener voz">■</button>
+            <span class="dock-divider"></span>
+            <button class="accent-ia" onclick="summarizeText()" title="Reflexión literaria">✧</button>
+        </div>
     </div>
-  </div>
 
-  <script src="app.js"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js").catch(console.error);
-    }
-  </script>
+    <!-- Modal de ajustes -->
+    <div id="settingsModal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="modal-title">Ajustes de lectura</h3>
+            <div class="setting-group">
+                <label>Tamaño del texto</label>
+                <div class="zoom-controls">
+                    <button onclick="zoomOut()">A-</button>
+                    <button onclick="zoomIn()">A+</button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Música ambiental</label>
+                <select id="musicSelect" class="select-field"></select>
+            </div>
+            <button class="primary-btn" onclick="toggleSettings()">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- Modal de reflexión -->
+    <div id="iaModal" class="modal hidden">
+        <div class="modal-content ia-panel">
+            <h3 class="modal-title accent">✧ Reflexión de lectura</h3>
+            <div id="iaContent" class="ia-text"></div>
+            <button class="primary-btn" onclick="closeIaModal()">Continuar leyendo</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("sw.js").catch(console.error);
+        }
+    </script>
 </body>
 </html>
