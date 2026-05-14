@@ -25,6 +25,7 @@ body {
   overflow: hidden;
 }
 
+/* Fondos cinematográficos */
 .bg-wood {
   position: fixed;
   inset: 0;
@@ -32,7 +33,6 @@ body {
   background: url('https://images.unsplash.com/photo-1532012197267-da84d127e765?q=80&w=2000&auto=format&fit=crop') center/cover;
   filter: sepia(40%) brightness(0.25) contrast(1.1);
 }
-
 .glass-overlay {
   position: fixed;
   inset: 0;
@@ -41,17 +41,35 @@ body {
   backdrop-filter: blur(6px);
 }
 
+/* Lógica de pantallas: ocultar con opacity, no con display:none */
 .pantalla {
-  position: relative;
-  z-index: 10;
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
+  transition: opacity 0.4s ease;
   overflow-y: auto;
 }
-.activa { display: flex; justify-content: center; align-items: center; padding: 20px; }
-.hidden { display: none !important; }
+.activa {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+.oculta {
+  opacity: 0;
+  pointer-events: none;
+  z-index: -10;
+}
+.hidden {
+  display: none !important;
+}
 
-/* Home */
+/* Tarjeta de inicio */
 .tarjeta-ejecutiva {
   width: min(800px, 95vw);
   background: linear-gradient(145deg, rgba(43,15,10,0.95), rgba(20,4,2,0.98));
@@ -74,16 +92,27 @@ body {
   text-transform: uppercase;
   letter-spacing: 3px;
   color: var(--oro);
-  margin-bottom: 20px;
+  margin-bottom: 5px;
   text-align: center;
+}
+.section-desc {
+  font-size: 14px;
+  color: var(--pergamino-oscuro);
+  font-style: italic;
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 .book-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 14px;
-  margin-bottom: 10px;
+  max-height: 45vh;
+  overflow-y: auto;
+  padding-right: 5px;
 }
+.book-grid::-webkit-scrollbar { width: 6px; }
+.book-grid::-webkit-scrollbar-thumb { background: var(--oro); border-radius: 10px; }
 
 .btn-book {
   background: rgba(244,236,216,0.03);
@@ -124,7 +153,7 @@ body {
 }
 .btn-pluma:active { transform: scale(0.96); }
 
-/* Reader */
+/* Pantalla de lectura */
 .top-nav {
   position: fixed;
   top: 0;
@@ -177,7 +206,7 @@ body {
 #reader p { margin-bottom: 1.5em; }
 #reader canvas { display: block; margin: 0 auto; max-width: 100%; height: auto; border-radius: 14px; }
 
-/* Dock */
+/* Dock flotante */
 .dock {
   position: fixed;
   bottom: 25px;
@@ -218,7 +247,7 @@ body {
 #btn-musica.activo { color: var(--roble-oscuro); background: var(--oro); }
 .accent-ia { color: #BA68C8; font-size: 22px; }
 
-/* Modals */
+/* Modales */
 .modal {
   position: fixed;
   inset: 0;
