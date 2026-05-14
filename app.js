@@ -3,20 +3,30 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
 const REPO_OWNER = "CarlosMazzu06";
 const REPO_NAME = "lector-app";
 const BOOK_FOLDER = "book";
-const API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${BOOK_FOLDER}`;
+const GITHUB_API = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${BOOK_FOLDER}`;
 
+// Pistas de música ambiental (públicas, estables)
 const MUSIC_TRACKS = [
   { title: "Vivaldi – La Primavera", url: "https://archive.org/download/VivaldiFourSeasonsTheSpring/Vivaldi%20-%20The%20Four%20Seasons%2C%20Spring.mp3" },
   { title: "Beethoven – Claro de Luna", url: "https://archive.org/download/MoonlightSonata_755/Beethoven-MoonlightSonata.mp3" },
   { title: "Chopin – Nocturno Op.9", url: "https://archive.org/download/ChopinNocturneOp9No2_201705/Chopin%20-%20Nocturne%20op.9%20No.2.mp3" }
 ];
 
+// Estado global
 let books = [];
-let currentPDF = null, currentEpub = null, rendition = null;
-let isEpub = false, currentPage = 1, currentText = "", currentFont = 28, epubFontPercent = 100;
-let currentBookTitle = "", currentObjectUrl = "";
+let currentPDF = null;
+let currentEpub = null;
+let rendition = null;
+let isEpub = false;
+let currentPage = 1;
+let currentText = "";
+let currentFont = 28;
+let epubFontPercent = 100;
+let currentBookTitle = "";
 let musicAudio = null;
+let currentObjectUrl = null;
 
+// Referencias al DOM
 const $ = (id) => document.getElementById(id);
 const els = {
   home: $("homeScreen"),
@@ -36,14 +46,14 @@ const els = {
   musicSelect: $("musicSelect")
 };
 
-init();
-
+// Inicialización
 async function init() {
   renderMusicOptions();
   els.fileInput.addEventListener("change", handleLocalFile);
   window.addEventListener("resize", () => {
     if (isEpub && rendition) rendition.resize(window.innerWidth, window.innerHeight);
   });
+
   await loadBooksFromRepo();
   renderBooks();
 }
@@ -52,15 +62,16 @@ function renderMusicOptions() {
   els.musicSelect.innerHTML = MUSIC_TRACKS.map((t, i) => `<option value="${i}">${t.title}</option>`).join("");
 }
 
+// Cargar libros desde la API de GitHub
 async function loadBooksFromRepo() {
   try {
-    const res = await fetch(API_URL, { cache: "no-store" });
+    const res = await fetch(GITHUB_API, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const files = await res.json();
     books = files
       .filter(f => f.type === "file" && /\.(epub|pdf)$/i.test(f.name))
       .map(f => ({
-        title: f.name.replace(/\.(epub|pdf)$/i, "").replace(/[_-]/g, " ").trim(),
+        title: f.name.replace(/\.(epub|pdf)$/i, "").replace(/[_-]+/g, " ").trim(),
         file: f.download_url,
         type: f.name.toLowerCase().endsWith(".epub") ? "epub" : "pdf"
       }))
@@ -68,15 +79,15 @@ async function loadBooksFromRepo() {
   } catch (err) {
     console.error(err);
     books = [];
-    showLoader("No pude acceder a la biblioteca del repositorio.");
-    els.loaderSubtext.textContent = "Verifica que la carpeta book exista y que el repositorio sea público.";
-    setTimeout(hideLoader, 2500);
+    showLoader("No se pudo acceder a la biblioteca.");
+    els.loaderSubtext.textContent = "Verifica que el repositorio sea público y la carpeta book exista.";
+    setTimeout(hideLoader, 3000);
   }
 }
 
 function renderBooks() {
   if (!books.length) {
-    els.bookGrid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:var(--pergamino-oscuro);">Ningún libro encontrado en /book.</p>`;
+    els.bookGrid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:var(--pergamino-oscuro);">No se encontraron libros en /book.</p>`;
     return;
   }
   els.bookGrid.innerHTML = books.map((b, i) => `
@@ -95,23 +106,21 @@ async function loadRepoBook(index) {
   if (!book) return;
 
   showLoader(`Abriendo ${book.type.toUpperCase()}…`);
-  els.loaderSubtext.textContent = book.type === "epub" ? "EPUB: descomprimiendo y maquetando (5–20 s)" : "";
+  els.loaderSubtext.textContent = book.type === "epub" ? "Descomprimiendo EPUB (unos segundos)…" : "";
 
   try {
+    const response = await fetch(book.file, { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     if (book.type === "epub") {
-      const response = await fetch(book.file, { cache: "no-store" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       await loadEpubFromUrl(url, book.title);
     } else {
-      const response = await fetch(book.file, { cache: "no-store" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const buffer = await response.arrayBuffer();
       await loadPDF(buffer, book.title);
     }
   } catch (err) {
-    alert(`No se pudo abrir "${book.title}". Verifica que el archivo exista en /book.`);
+    alert(`Error al abrir "${book.title}". Verifica que el archivo exista en /book.`);
   } finally {
     hideLoader();
   }
@@ -120,6 +129,7 @@ async function loadRepoBook(index) {
 async function handleLocalFile(e) {
   const file = e.target.files?.[0];
   if (!file) return;
+
   showLoader("Procesando archivo local…");
   try {
     if (file.name.toLowerCase().endsWith(".epub")) {
@@ -133,21 +143,27 @@ async function handleLocalFile(e) {
       hideLoader();
     }
   } catch (err) {
-    alert("Archivo dañado o protegido.");
+    alert("El archivo parece dañado o protegido.");
     hideLoader();
   } finally {
     els.fileInput.value = "";
   }
 }
 
+// Lógica EPUB (usando Blob URL y retardo para que el contenedor sea visible)
 async function loadEpubFromUrl(url, title, isLocal = false) {
   cleanup();
   isEpub = true;
   currentBookTitle = title;
   currentObjectUrl = isLocal ? url : "";
-  openReader(title);
 
-  await new Promise(resolve => setTimeout(resolve, 220));
+  // Mostrar pantalla de lectura (sin ocultarla con display:none)
+  els.home.classList.replace("activa", "oculta");
+  els.readerScreen.classList.replace("oculta", "activa");
+  els.title.textContent = title;
+
+  // Pequeña pausa para que el layout se estabilice
+  await new Promise(resolve => setTimeout(resolve, 250));
 
   currentEpub = ePub(url);
   await currentEpub.ready;
@@ -176,6 +192,7 @@ async function loadEpubFromUrl(url, title, isLocal = false) {
   updateTextFromEpub();
   els.title.textContent = title;
 
+  // Si es local, revocar la URL después de un tiempo prudencial
   if (isLocal) {
     setTimeout(() => {
       try { URL.revokeObjectURL(currentObjectUrl); } catch (_) {}
@@ -183,13 +200,28 @@ async function loadEpubFromUrl(url, title, isLocal = false) {
   }
 }
 
+function updateTextFromEpub() {
+  setTimeout(() => {
+    if (!isEpub) return;
+    try {
+      const iframe = document.querySelector("#reader iframe");
+      const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
+      const text = doc?.body?.innerText?.trim();
+      if (text) currentText = text;
+    } catch (_) {}
+  }, 500);
+}
+
+// Lógica PDF
 async function loadPDF(buffer, title) {
   cleanup();
   isEpub = false;
   currentBookTitle = title;
   currentPDF = await pdfjsLib.getDocument({ data: buffer }).promise;
   currentPage = 1;
-  openReader(title);
+  els.home.classList.replace("activa", "oculta");
+  els.readerScreen.classList.replace("oculta", "activa");
+  els.title.textContent = title;
   await renderPDFPage();
 }
 
@@ -217,18 +249,6 @@ async function renderPDFPage() {
   els.title.textContent = `${currentBookTitle} · Pág. ${currentPage}`;
 }
 
-function updateTextFromEpub() {
-  setTimeout(() => {
-    if (!isEpub) return;
-    try {
-      const iframe = document.querySelector("#reader iframe");
-      const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
-      const text = doc?.body?.innerText?.trim();
-      if (text) currentText = text;
-    } catch (_) {}
-  }, 500);
-}
-
 function cleanup() {
   if (currentEpub && typeof currentEpub.destroy === "function") {
     try { currentEpub.destroy(); } catch (_) {}
@@ -236,22 +256,21 @@ function cleanup() {
   if (currentObjectUrl) {
     try { URL.revokeObjectURL(currentObjectUrl); } catch (_) {}
   }
-  currentPDF = null; currentEpub = null; rendition = null;
-  isEpub = false; currentPage = 1; currentText = ""; currentObjectUrl = "";
+  currentPDF = null;
+  currentEpub = null;
+  rendition = null;
+  isEpub = false;
+  currentPage = 1;
+  currentText = "";
+  currentObjectUrl = "";
   els.readerDiv.innerHTML = "";
 }
 
-function openReader(title) {
-  els.home.classList.add("hidden");
-  els.readerScreen.classList.remove("hidden");
-  els.title.textContent = title || "Lectura";
-  closeModals();
-}
-
 function goHome() {
-  stopVoice(); stopMusic();
-  els.readerScreen.classList.add("hidden");
-  els.home.classList.remove("hidden");
+  stopVoice();
+  stopMusic();
+  els.readerScreen.classList.replace("activa", "oculta");
+  els.home.classList.replace("oculta", "activa");
   closeModals();
 }
 
@@ -286,13 +305,13 @@ function applyFontSize() {
     els.readerDiv.style.fontSize = `${currentFont}px`;
   }
 }
-
 function applyEpubFont() {
   if (rendition && rendition.themes) {
     try { rendition.themes.fontSize(`${epubFontPercent}%`); } catch (_) {}
   }
 }
 
+// Música
 function toggleMusic() {
   const track = MUSIC_TRACKS[Number(els.musicSelect.value) || 0];
   if (!track) return;
@@ -307,7 +326,7 @@ function toggleMusic() {
   if (musicAudio.paused) {
     musicAudio.play()
       .then(() => els.btnMusica.classList.add("activo"))
-      .catch(() => alert("El navegador bloqueó el audio. Toca de nuevo el botón."));
+      .catch(() => alert("El navegador bloqueó la música. Presiona de nuevo el botón."));
   } else {
     stopMusic();
   }
@@ -323,6 +342,7 @@ function stopMusic(updateButton = true) {
   } catch (_) {}
 }
 
+// Voz automática (sin selección manual)
 function playVoice() {
   if (!currentText || currentText.length < 10) {
     alert("La página actual no tiene suficiente texto.");
@@ -334,9 +354,9 @@ function playVoice() {
   utterance.rate = 0.92;
   speechSynthesis.speak(utterance);
 }
-
 function stopVoice() { speechSynthesis.cancel(); }
 
+// Reflexión analítica (usando Intl.Segmenter)
 function summarizeText() {
   if (!currentText || currentText.length < 100) {
     alert("Se necesita más texto en la página para generar una reflexión.");
@@ -365,10 +385,12 @@ function summarizeText() {
   els.iaModal.classList.remove("hidden");
 }
 
+// Modales
 function toggleSettings() { els.settingsModal.classList.toggle("hidden"); }
 function closeIaModal() { els.iaModal.classList.add("hidden"); }
 function closeModals() { els.settingsModal.classList.add("hidden"); els.iaModal.classList.add("hidden"); }
 
+// Utilidades
 function escapeHtml(str) {
   return String(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
@@ -380,3 +402,5 @@ function showLoader(msg) {
 }
 
 function hideLoader() { els.loader.classList.add("hidden"); }
+
+init();
