@@ -1,26 +1,28 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-// ── BIBLIOTECA (solo los libros que realmente existen en /book/) ──
+// ── BIBLIOTECA (solo libros reales) ──
 const BOOKS = [
   {
     title: "Zensorialmente",
     file: "book/Zensorialmente_Estanislao_Bachrach.epub",
-    type: "epub",
-    icon: "📜"
+    type: "epub"
   }
 ];
 
-// ── MÚSICA AMBIENTAL (archivo público, puede cambiarse) ──
-const BG_MUSIC_URL = "https://upload.wikimedia.org/wikipedia/commons/d/d4/Beethoven_Piano_Sonata_No._14_in_C-sharp_minor%2C_%22Moonlight%22%2C_Op._27_No._2_-_I._Adagio_sostenuto.ogg";
+// ── MÚSICA AMBIENTAL (archivo público, estable) ──
+const AMBIENT_MUSIC_URL = "https://upload.wikimedia.org/wikipedia/commons/d/d4/Beethoven_Piano_Sonata_No._14_in_C-sharp_minor%2C_%22Moonlight%22%2C_Op._27_No._2_-_I._Adagio_sostenuto.ogg";
 
 // ── ESTADO GLOBAL ──
-let currentPDF = null, currentEpub = null, rendition = null;
-let isEpub = false, currentPage = 1, currentText = "", currentFont = 26, epubFontPercent = 100;
+let currentPDF = null;
+let currentEpub = null;
+let rendition = null;
+let isEpub = false;
+let currentPage = 1;
+let currentText = "";
+let currentFont = 28;
+let epubFontPercent = 100;
 let currentBookTitle = "";
-let currentObjectUrl = null;
-let musicAudio = new Audio(BG_MUSIC_URL);
-musicAudio.volume = 0.2;
-musicAudio.loop = true;
+let musicAudio = null;
 
 // ── REFERENCIAS DOM ──
 const $ = (id) => document.getElementById(id);
@@ -31,12 +33,12 @@ const els = {
   readerContainer: $("readerContainer"),
   title: $("currentTitle"),
   loader: $("loader"),
+  loaderSubtext: $("loaderSubtext"),
   bookGrid: $("bookGrid"),
   fileInput: $("fileInput"),
   settingsModal: $("settingsModal"),
   iaModal: $("iaModal"),
   iaContent: $("iaContent"),
-  voiceSelect: $("voiceSelect"),
   btnMusica: $("btn-musica")
 };
 
@@ -47,39 +49,28 @@ function init() {
   window.addEventListener("resize", () => {
     if (isEpub && rendition) rendition.resize(window.innerWidth, window.innerHeight);
   });
-  populateVoices();
 }
 init();
 
 function renderLibrary() {
   els.bookGrid.innerHTML = BOOKS.map((b, i) => `
     <button class="btn-libro-repo" onclick="loadRepoBook(${i})">
-      <div class="icono-libro">${b.icon}</div>
       <div class="info-libro">
+        <div class="tipo-libro">${b.type}</div>
         <div class="titulo-libro">${b.title}</div>
-        <div class="tipo-libro">${b.type.toUpperCase()}</div>
       </div>
     </button>
   `).join("");
-}
-
-function populateVoices() {
-  const fill = () => {
-    const voices = speechSynthesis.getVoices().filter(v => (v.lang || "").startsWith("es"));
-    const usable = voices.length ? voices : speechSynthesis.getVoices();
-    els.voiceSelect.innerHTML = usable.length
-      ? usable.map((v, i) => `<option value="${i}">${v.name} (${v.lang || "voz"})</option>`).join("")
-      : `<option value="0">Voz del sistema</option>`;
-  };
-  fill();
-  speechSynthesis.onvoiceschanged = fill;
 }
 
 // ── CARGA DESDE REPOSITORIO ──
 async function loadRepoBook(index) {
   const book = BOOKS[index];
   if (!book) return;
-  showLoader(`Abriendo «${book.title}»…`);
+
+  showLoader("Desencriptando archivo...");
+  if (book.type === "epub") els.loaderSubtext.textContent = "Descomprimiendo EPUB. Tiempo estimado: 10-25 segundos...";
+
   try {
     if (book.type === "epub") {
       await loadEpubFromUrl(book.file, book.title);
@@ -91,7 +82,7 @@ async function loadRepoBook(index) {
     }
   } catch (err) {
     console.error(err);
-    alert(`No se pudo abrir "${book.file}". Verificá que el archivo exista en /book/ exactamente con ese nombre.`);
+    alert(`No se pudo abrir "${book.file}". Verifica que el archivo exista en /book/ y el nombre coincida exactamente.`);
   } finally {
     hideLoader();
   }
@@ -101,14 +92,16 @@ async function loadRepoBook(index) {
 async function handleLocalFile(e) {
   const file = e.target.files[0];
   if (!file) return;
-  showLoader("Procesando archivo…");
+  showLoader("Procesando archivo...");
+
   try {
     const buffer = await file.arrayBuffer();
     const name = file.name.toLowerCase();
+
     if (name.endsWith(".epub")) {
+      els.loaderSubtext.textContent = "Descomprimiendo EPUB local...";
       const blob = new Blob([buffer], { type: "application/epub+zip" });
-      currentObjectUrl = URL.createObjectURL(blob);
-      await loadEpubFromUrl(currentObjectUrl, file.name);
+      await loadEpubFromUrl(URL.createObjectURL(blob), file.name);
     } else if (name.endsWith(".pdf") || file.type === "application/pdf") {
       await loadPDF(buffer, file.name);
     } else {
@@ -123,29 +116,29 @@ async function handleLocalFile(e) {
   }
 }
 
-// ── LÓGICA EPUB ──
+// ── EPUB ──
 async function loadEpubFromUrl(url, title = "EPUB") {
   cleanup();
   isEpub = true;
   currentBookTitle = title;
   openReader(title);
 
-  // Pequeña pausa para garantizar que el contenedor sea visible
-  await new Promise(resolve => setTimeout(resolve, 220));
+  // Pausa para garantizar que el contenedor sea visible
+  await new Promise(resolve => setTimeout(resolve, 200));
 
   currentEpub = ePub(url);
   await currentEpub.ready;
 
   rendition = currentEpub.renderTo("reader", {
     width: "100%",
-    height: window.innerHeight - 86,
+    height: window.innerHeight - 80,
     spread: "none",
     flow: "scrolled-doc"
   });
 
   rendition.themes.default({
     body: {
-      background: "#0F0F0F",
+      background: "#0F0F11",
       color: "#E5E7EB",
       "font-family": "Playfair Display, serif",
       "line-height": "1.9"
@@ -171,10 +164,10 @@ function updateEpubText() {
       const text = doc?.body?.innerText?.trim();
       if (text) currentText = text;
     } catch (_) {}
-  }, 450);
+  }, 500);
 }
 
-// ── LÓGICA PDF ──
+// ── PDF ──
 async function loadPDF(buffer, title = "PDF") {
   cleanup();
   isEpub = false;
@@ -192,7 +185,7 @@ async function renderPDFPage() {
   const content = await page.getTextContent();
   currentText = content.items.map(item => item.str).join(" ").trim();
 
-  const viewport = page.getViewport({ scale: 1.55 });
+  const viewport = page.getViewport({ scale: 1.5 });
   const canvas = document.createElement("canvas");
   canvas.width = viewport.width;
   canvas.height = viewport.height;
@@ -214,10 +207,6 @@ async function renderPDFPage() {
 function cleanup() {
   if (currentEpub && typeof currentEpub.destroy === "function") {
     try { currentEpub.destroy(); } catch (_) {}
-  }
-  if (currentObjectUrl) {
-    try { URL.revokeObjectURL(currentObjectUrl); } catch (_) {}
-    currentObjectUrl = null;
   }
   currentPDF = null;
   currentEpub = null;
@@ -292,62 +281,77 @@ function applyEpubFont() {
 
 // ── MÚSICA ──
 function toggleMusic() {
+  if (!musicAudio) {
+    musicAudio = new Audio(AMBIENT_MUSIC_URL);
+    musicAudio.loop = true;
+    musicAudio.volume = 0.3;
+  }
   if (musicAudio.paused) {
     musicAudio.play()
       .then(() => els.btnMusica.classList.add("activo"))
-      .catch(() => alert("El navegador bloqueó la música. Presiona de nuevo."));
+      .catch(() => alert("El navegador bloqueó la música. Vuelve a presionar el botón."));
   } else {
     musicAudio.pause();
     els.btnMusica.classList.remove("activo");
   }
 }
 function stopMusic() {
-  musicAudio.pause();
-  musicAudio.currentTime = 0;
-  els.btnMusica.classList.remove("activo");
+  if (musicAudio) {
+    musicAudio.pause();
+    musicAudio.currentTime = 0;
+    els.btnMusica.classList.remove("activo");
+  }
 }
 
-// ── VOZ AUTOMÁTICA ──
+// ── VOZ ──
 function playVoice() {
   if (!currentText || currentText.length < 10) {
-    alert("La página actual no contiene texto suficiente para leer.");
+    alert("La página actual no tiene suficiente texto para leer.");
     return;
   }
   stopVoice();
   const utterance = new SpeechSynthesisUtterance(currentText);
-  const voices = speechSynthesis.getVoices();
-  const voiceIndex = Number(els.voiceSelect.value || 0);
-  utterance.voice = voices[voiceIndex] || voices.find(v => (v.lang || "").startsWith("es")) || null;
   utterance.lang = "es-AR";
   utterance.rate = 0.9;
   speechSynthesis.speak(utterance);
 }
-function stopVoice() {
-  speechSynthesis.cancel();
-}
+function stopVoice() { speechSynthesis.cancel(); }
 
-// ── RESUMEN IA ──
+// ── REFLEXIÓN ANALÍTICA ──
 function summarizeText() {
   if (!currentText || currentText.length < 100) {
-    alert("Seleccione un pasaje más extenso para analizar.");
+    alert("Se necesita más texto en la página para generar una reflexión.");
     return;
   }
-  const sentences = currentText.match(/[^.!?]+[.!?]+/g) || [currentText];
-  let summary = currentText;
-  if (sentences.length > 2) {
-    summary = `${sentences[0].trim()}\n\n${sentences[Math.floor(sentences.length / 2)].trim()}\n\n${sentences[sentences.length - 1].trim()}`;
+
+  let sentences = [];
+  // API moderna de segmentación lingüística
+  if (window.Intl && Intl.Segmenter) {
+    const segmenter = new Intl.Segmenter('es', { granularity: 'sentence' });
+    sentences = Array.from(segmenter.segment(currentText)).map(s => s.segment);
+  } else {
+    sentences = currentText.match(/[^.!?]+[.!?]+/g) || [currentText];
   }
-  els.iaContent.innerHTML = summary.replace(/\n/g, "<br>");
+
+  if (sentences.length <= 2) {
+    els.iaContent.innerHTML = `<strong>Nota del analista:</strong> El pasaje es demasiado breve. Continúa la lectura para obtener una reflexión más profunda.`;
+  } else {
+    const tesis = sentences[0].trim();
+    const nudo = sentences[Math.floor(sentences.length / 2)].trim();
+    const conclusion = sentences[sentences.length - 1].trim();
+
+    els.iaContent.innerHTML = `
+      <strong>1. La premisa central:</strong><br>${tesis}<br><br>
+      <strong>2. Punto de inflexión:</strong><br>${nudo}<br><br>
+      <strong>3. Desenlace y reflexión:</strong><br>${conclusion}
+    `;
+  }
   els.iaModal.classList.remove("hidden");
 }
-function closeIaModal() {
-  els.iaModal.classList.add("hidden");
-}
+function closeIaModal() { els.iaModal.classList.add("hidden"); }
 
 // ── MODALES ──
-function toggleSettings() {
-  els.settingsModal.classList.toggle("hidden");
-}
+function toggleSettings() { els.settingsModal.classList.toggle("hidden"); }
 function closeModals() {
   els.settingsModal.classList.add("hidden");
   els.iaModal.classList.add("hidden");
@@ -355,7 +359,8 @@ function closeModals() {
 
 // ── LOADER ──
 function showLoader(msg) {
-  els.loader.textContent = msg;
+  els.loaderText.textContent = msg;
+  els.loaderSubtext.textContent = "";
   els.loader.classList.remove("hidden");
 }
 function hideLoader() {
