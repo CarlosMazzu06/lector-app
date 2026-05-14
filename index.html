@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Santuario Literario</title>
 
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Playfair+Display:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.json" />
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -33,17 +33,18 @@
       <header class="hero">
         <div class="logo-mark">✑</div>
         <h1>Santuario Literario</h1>
-        <p class="bajada">Colección privada de lectura inmersiva</p>
+        <p class="bajada">Lectura inmersiva, música ambiental y reflexión guiada</p>
       </header>
 
       <div class="divider">⚜</div>
 
       <h2 class="section-title">Obras del repositorio</h2>
+      <p class="section-desc">Sincronización automática con la nube</p>
       <div id="bookGrid" class="book-grid"></div>
 
       <div class="divider">⚜</div>
 
-      <h2 class="section-title">Importar obra local</h2>
+      <h2 class="section-title">Cargar obra local</h2>
       <label class="btn-pluma">
         <span>✍</span> Seleccionar PDF o EPUB
         <input type="file" id="fileInput" accept=".pdf,.epub" hidden />
@@ -52,7 +53,7 @@
   </div>
 
   <!-- Pantalla de lectura -->
-  <div id="readerScreen" class="pantalla hidden">
+  <div id="readerScreen" class="pantalla oculta">
     <nav class="top-nav">
       <button class="nav-btn" onclick="goHome()">✕</button>
       <div id="currentTitle" class="title-obra">Lectura</div>
@@ -63,7 +64,7 @@
       <div id="reader"></div>
     </div>
 
-    <!-- Dock -->
+    <!-- Dock de herramientas -->
     <div class="dock">
       <button onclick="prevPage()">←</button>
       <button onclick="nextPage()">→</button>
