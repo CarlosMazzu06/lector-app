@@ -65,7 +65,7 @@
       <button onclick="prevPage()" title="Página anterior" aria-label="Anterior">←</button>
       <button onclick="nextPage()" title="Página siguiente" aria-label="Siguiente">→</button>
       <span class="dock-divider"></span>
-      <button id="btn-musica" onclick="toggleMusic()" title="Música ambiental" aria-label="Música">♪</button>
+      <button id="btn-musica" onclick="toggleMusic()" title="Música ambiental" aria-label="Música" aria-pressed="false">♪</button>
       <button onclick="playVoice()" title="Leer en voz alta" aria-label="Leer">▶</button>
       <button onclick="stopVoice()" title="Detener voz" aria-label="Silencio">■</button>
       <span class="dock-divider"></span>
@@ -75,7 +75,11 @@
 
   <div id="settingsModal" class="modal hidden" aria-hidden="true">
     <div class="modal-content">
-      <h3 class="modal-title">Ajustes de lectura</h3>
+      <div class="modal-header">
+        <h3 class="modal-title">Ajustes de lectura</h3>
+        <button class="modal-close" onclick="toggleSettings()" aria-label="Cerrar ajustes">✕</button>
+      </div>
+
       <div class="setting-group">
         <label>Tamaño del texto</label>
         <div class="zoom-controls">
@@ -83,17 +87,41 @@
           <button onclick="zoomIn()">A+</button>
         </div>
       </div>
+
+      <div class="setting-group">
+        <label>Voz narradora</label>
+        <select id="voiceSelect" class="select-field"></select>
+      </div>
+
+      <div class="setting-group">
+        <label>Velocidad de voz</label>
+        <select id="voiceRateSelect" class="select-field">
+          <option value="0.88">Lenta</option>
+          <option value="0.96" selected>Normal</option>
+          <option value="1.04">Ágil</option>
+        </select>
+      </div>
+
       <div class="setting-group">
         <label>Música ambiental</label>
         <select id="musicSelect" class="select-field"></select>
       </div>
+
+      <div class="setting-group">
+        <label>Volumen musical</label>
+        <input id="musicVolume" class="range-field" type="range" min="0.35" max="1" step="0.05" value="0.90">
+      </div>
+
       <button class="primary-btn" onclick="toggleSettings()">Cerrar</button>
     </div>
   </div>
 
   <div id="iaModal" class="modal hidden" aria-hidden="true">
     <div class="modal-content ia-panel">
-      <h3 class="modal-title accent">✧ Reflexión de lectura</h3>
+      <div class="modal-header">
+        <h3 class="modal-title accent">✧ Reflexión de lectura</h3>
+        <button class="modal-close dark" onclick="closeIaModal()" aria-label="Cerrar reflexión">✕</button>
+      </div>
       <div id="iaContent" class="ia-text"></div>
       <button class="primary-btn" onclick="closeIaModal()">Continuar leyendo</button>
     </div>
