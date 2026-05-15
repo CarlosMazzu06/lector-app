@@ -58,6 +58,9 @@ body {
   align-items: center;
   padding: 20px;
 }
+#readerScreen.activa {
+  display: block;
+}
 .oculta {
   opacity: 0;
   pointer-events: none;
@@ -156,7 +159,7 @@ body {
 .btn-book:active { transform: scale(0.985); }
 
 .book-icon { font-size: 24px; color: var(--oro-brillante); flex: 0 0 auto; }
-.book-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 600; line-height: 1.2; }
+.book-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
 .book-meta { font-size: 12px; color: var(--oro); margin-top: 4px; letter-spacing: 1px; }
 
 .btn-pluma {
@@ -307,7 +310,7 @@ body {
   background: var(--roble-oscuro);
   border: 1px solid var(--border);
   border-radius: 18px;
-  padding: 28px 22px;
+  padding: 22px;
   width: min(480px, 95vw);
   box-shadow: 0 25px 50px rgba(0,0,0,0.6);
 }
@@ -318,13 +321,41 @@ body {
   border-color: var(--roble);
 }
 
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
 .modal-title {
   font-family: 'Cinzel', serif;
   font-size: 20px;
-  text-align: center;
-  margin-bottom: 22px;
+  text-align: left;
 }
 .modal-title.accent { color: var(--roble); }
+
+.modal-close {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(197,160,89,0.32);
+  background: linear-gradient(180deg, var(--oro-brillante), var(--oro));
+  color: var(--roble-oscuro);
+  font-size: 22px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+}
+.modal-close.dark {
+  background: rgba(255,255,255,0.08);
+  color: var(--roble-oscuro);
+  border-color: rgba(197,160,89,0.28);
+}
 
 .setting-group { margin-bottom: 18px; }
 .setting-group label {
@@ -349,7 +380,8 @@ body {
   width: 100%;
 }
 
-.select-field {
+.select-field,
+.range-field {
   width: 100%;
   padding: 14px;
   background: rgba(255,255,255,0.05);
@@ -359,6 +391,13 @@ body {
   outline: none;
   font-size: 15px;
 }
+.select-field option {
+  background: var(--roble-oscuro);
+  color: var(--pergamino);
+}
+.range-field {
+  accent-color: var(--oro);
+}
 
 .ia-text {
   font-size: 17px;
@@ -366,7 +405,11 @@ body {
   max-height: 60vh;
   overflow-y: auto;
 }
-.ia-text h4 { color: var(--roble); margin: 16px 0 6px; font-family: 'Cinzel', serif; }
+.ia-text h4 {
+  color: var(--roble);
+  margin: 16px 0 6px;
+  font-family: 'Cinzel', serif;
+}
 
 .loader {
   position: fixed;
@@ -390,7 +433,12 @@ body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.loader-text { font-family: 'Cinzel', serif; font-size: 18px; color: var(--oro-brillante); margin-bottom: 8px; }
+.loader-text {
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  color: var(--oro-brillante);
+  margin-bottom: 8px;
+}
 .loader-subtext {
   color: var(--pergamino-oscuro);
   font-style: italic;
