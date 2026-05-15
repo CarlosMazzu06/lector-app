@@ -322,6 +322,8 @@ body {
   border-radius: 18px;
   padding: 22px;
   width: min(520px, 95vw);
+  max-height: calc(100vh - 28px);
+  overflow-y: auto;
   box-shadow: 0 25px 50px rgba(0,0,0,0.6);
 }
 
