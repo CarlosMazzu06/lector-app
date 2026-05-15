@@ -1,6 +1,6 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-// Limpiar parámetros de tracking como ?utm_source=chatgpt.com
+// Limpiar la URL si tiene parámetros de tracking
 if (location.search) {
   history.replaceState({}, "", location.pathname);
 }
@@ -16,17 +16,19 @@ const MUSIC_TRACKS = [
   { title: "Chopin – Nocturno Op.9", url: "https://archive.org/download/ChopinNocturneOp9No2_201705/Chopin%20-%20Nocturne%20op.9%20No.2.mp3" }
 ];
 
-// Palabras de parada para el análisis de palabras clave
+// Respaldo manual con los nombres EXACTOS de los libros en /book
+const BOOKS_FALLBACK = [
+  { title: "Zensorialmente", file: "book/Zensorialmente_Estanislao_Bachrach.epub", type: "epub" },
+  { title: "Anatomía de un esquema Ponzi", file: "book/Anatomía de un esquema Ponzi Estafas pasadas y presentes (Colleen Cross) (Z-Library).epub", type: "epub" }
+];
+
 const STOPWORDS = new Set([
-  "a", "acá", "ahí", "al", "algo", "algunas", "algunos", "ante", "antes", "aquí", "así", "aun", "aunque",
-  "bajo", "bien", "como", "con", "contra", "cual", "cuales", "cuando", "de", "del", "desde", "donde",
-  "dos", "el", "ella", "ellas", "ellos", "en", "entre", "era", "eran", "es", "esa", "esas", "ese", "eso",
-  "esos", "esta", "estaba", "estaban", "este", "esto", "estos", "fue", "ha", "han", "hay", "la", "las",
-  "le", "les", "lo", "los", "más", "me", "mi", "mis", "mucho", "muy", "no", "nos", "o", "para", "pero",
-  "por", "porque", "que", "qué", "se", "si", "sin", "sobre", "su", "sus", "también", "te", "tiene",
-  "tienen", "todo", "un", "una", "uno", "unos", "unas", "y", "ya", "yo", "sus", "entre", "ser", "como",
-  "hay", "dentro", "fuera", "mientras", "según", "sobre", "tras", "tanto", "sin", "cada", "casi", "todo",
-  "toda"
+  "a","acá","ahí","al","algo","algunas","algunos","ante","antes","aquí","así","aun","aunque","bajo","bien",
+  "como","con","contra","cual","cuales","cuando","de","del","desde","donde","dos","el","ella","ellas","ellos",
+  "en","entre","era","eran","es","esa","esas","ese","eso","esos","esta","estaba","estaban","este","esto","estos",
+  "fue","ha","han","hay","la","las","le","les","lo","los","más","me","mi","mis","mucho","muy","no","nos","o",
+  "para","pero","por","porque","que","qué","se","si","sin","sobre","su","sus","también","te","tiene","tienen",
+  "todo","un","una","uno","unos","unas","y","ya","yo","ser","dentro","fuera","mientras","según","tras","tanto","cada","casi","toda"
 ]);
 
 let books = [];
@@ -40,8 +42,7 @@ let currentFont = 28;
 let epubFontPercent = 100;
 let currentBookTitle = "";
 let musicAudio = null;
-let currentObjectUrl = null;
-let lastMusicIndex = 0;
+let lastMusicIndex = Number(localStorage.getItem("santuario_music_index") || 0);
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -62,8 +63,11 @@ const els = {
   musicSelect: $("musicSelect")
 };
 
-/* ── Utilidades ── */
 function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+function escapeHtml(str) {
+  return String(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
 
 function showLoader(text, subtext = "") {
   els.loaderText.textContent = text;
@@ -71,13 +75,6 @@ function showLoader(text, subtext = "") {
   els.loader.classList.remove("hidden");
 }
 function hideLoader() { els.loader.classList.add("hidden"); }
-
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
 
 function openReader(title) {
   els.home.classList.replace("activa", "oculta");
@@ -103,9 +100,7 @@ function closeModals() {
 }
 
 function renderMusicOptions() {
-  els.musicSelect.innerHTML = MUSIC_TRACKS
-    .map((t, i) => `<option value="${i}">${t.title}</option>`)
-    .join("");
+  els.musicSelect.innerHTML = MUSIC_TRACKS.map((t, i) => `<option value="${i}">${t.title}</option>`).join("");
   els.musicSelect.value = String(lastMusicIndex);
 }
 
@@ -113,22 +108,16 @@ function cleanup() {
   if (currentEpub && typeof currentEpub.destroy === "function") {
     try { currentEpub.destroy(); } catch (_) {}
   }
-  if (currentObjectUrl) {
-    try { URL.revokeObjectURL(currentObjectUrl); } catch (_) {}
-  }
   currentPDF = null;
   currentEpub = null;
   rendition = null;
   isEpub = false;
   currentPage = 1;
   currentText = "";
-  currentObjectUrl = null;
-  currentBookTitle = "";
   els.readerDiv.innerHTML = "";
   els.readerDiv.style.fontSize = `${currentFont}px`;
 }
 
-/* ── Inicialización ── */
 async function init() {
   renderMusicOptions();
   els.fileInput.addEventListener("change", handleLocalFile);
@@ -138,21 +127,15 @@ async function init() {
     }
   });
 
-  // Cargar libros: intenta la API de GitHub, si falla usa una lista local de respaldo
+  // Intenta cargar desde la API; si falla, usa el respaldo exacto.
   try {
     await loadBooksFromGitHub();
-  } catch {
-    console.warn("Usando catálogo de respaldo porque la API de GitHub no respondió.");
+  } catch (err) {
+    console.warn("Usando catálogo de respaldo porque la API no respondió.", err);
     books = BOOKS_FALLBACK;
   }
   renderBooks();
 }
-
-// Lista de respaldo en caso de fallo de la API (mismo nombre que en /book)
-const BOOKS_FALLBACK = [
-  { title: "Zensorialmente", file: "book/Zensorialmente_Estanislao_Bachrach.epub", type: "epub" },
-  { title: "Departamento en Venta", file: "book/Departamento_en_Venta.pdf", type: "pdf" }
-];
 
 async function loadBooksFromGitHub() {
   const res = await fetch(GITHUB_API, { cache: "no-store" });
@@ -174,7 +157,7 @@ function renderBooks() {
     return;
   }
   els.bookGrid.innerHTML = books.map((b, i) => `
-    <button class="btn-book" onclick="loadRepoBook(${i})" title="${b.title}">
+    <button class="btn-book" onclick="loadRepoBook(${i})" title="${escapeHtml(b.title)}">
       <span class="book-icon">${b.type === "epub" ? "✑" : "▣"}</span>
       <div>
         <div class="book-title">${escapeHtml(b.title)}</div>
@@ -187,32 +170,23 @@ function renderBooks() {
 async function loadRepoBook(index) {
   const book = books[index];
   if (!book) return;
-  const estimate = book.type === "epub" ? "Puede tardar entre 2 y 8 segundos." : "Abriendo al instante.";
-  showLoader(`Abriendo ${book.type.toUpperCase()}…`, estimate);
+  showLoader(`Abriendo ${book.type.toUpperCase()}…`, book.type === "epub" ? "La carga puede tardar unos segundos." : "");
 
   try {
+    const response = await fetch(book.file, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Error ${response.status}`);
+    const buffer = await response.arrayBuffer();
+
     if (book.type === "epub") {
-      // Si el archivo viene de la API, su URL es de descarga; si es del fallback, usamos fetch directo
-      const url = book.file.startsWith("http") ? book.file : book.file;
-      if (book.file.startsWith("http")) {
-        const response = await fetch(book.file, { cache: "no-store" });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const blob = await response.blob();
-        currentObjectUrl = URL.createObjectURL(blob);
-        await loadEpubFromUrl(currentObjectUrl, book.title);
-      } else {
-        // archivo local (respaldo)
-        await loadEpubFromUrl(book.file, book.title);
-      }
+      const blob = new Blob([buffer], { type: "application/epub+zip" });
+      const url = URL.createObjectURL(blob);
+      await loadEpubFromUrl(url, book.title);
     } else {
-      const response = await fetch(book.file, { cache: "no-store" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const buffer = await response.arrayBuffer();
       await loadPDF(buffer, book.title);
     }
   } catch (err) {
     console.error(err);
-    alert(`Error al abrir "${book.title}". Verifica que el archivo exista en /book/ y que el nombre sea exacto.`);
+    alert(`No se pudo abrir "${book.title}". Verifica que el archivo exista en /book/ y que el nombre sea exacto.`);
   } finally {
     hideLoader();
   }
@@ -224,12 +198,14 @@ async function handleLocalFile(e) {
   showLoader("Procesando archivo local…", file.name.toLowerCase().endsWith(".epub") ? "Preparando EPUB…" : "Preparando PDF…");
 
   try {
-    if (file.name.toLowerCase().endsWith(".epub")) {
-      const url = URL.createObjectURL(file);
-      currentObjectUrl = url;
+    const buffer = await file.arrayBuffer();
+    const name = file.name.toLowerCase();
+
+    if (name.endsWith(".epub")) {
+      const blob = new Blob([buffer], { type: "application/epub+zip" });
+      const url = URL.createObjectURL(blob);
       await loadEpubFromUrl(url, file.name);
-    } else if (file.name.toLowerCase().endsWith(".pdf") || file.type === "application/pdf") {
-      const buffer = await file.arrayBuffer();
+    } else if (name.endsWith(".pdf") || file.type === "application/pdf") {
       await loadPDF(buffer, file.name);
     } else {
       alert("Formato no compatible. Solo PDF o EPUB.");
@@ -248,7 +224,7 @@ async function loadEpubFromUrl(url, title) {
   isEpub = true;
   currentBookTitle = title;
   openReader(title);
-  await wait(180);
+  await wait(200);
 
   currentEpub = ePub(url);
   await currentEpub.ready;
@@ -298,7 +274,7 @@ async function renderPDFPage() {
   const content = await page.getTextContent();
   currentText = content.items.map(item => item.str).join(" ").replace(/\s+/g, " ").trim();
 
-  const scale = Math.max(1.2, Math.min(1.8, window.innerWidth / 680));
+  const scale = Math.max(1.15, Math.min(1.72, window.innerWidth / 700));
   const viewport = page.getViewport({ scale });
   const canvas = document.createElement("canvas");
   canvas.width = viewport.width;
@@ -308,10 +284,8 @@ async function renderPDFPage() {
   canvas.style.maxWidth = "100%";
   canvas.style.height = "auto";
   canvas.style.borderRadius = "14px";
-  canvas.style.boxShadow = "0 12px 30px rgba(0,0,0,0.10)";
 
-  const ctx = canvas.getContext("2d");
-  await page.render({ canvasContext: ctx, viewport }).promise;
+  await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
 
   els.readerDiv.innerHTML = "";
   els.readerDiv.appendChild(canvas);
@@ -369,17 +343,16 @@ function zoomIn() { currentFont = Math.min(currentFont + 4, 54); epubFontPercent
 function zoomOut() { currentFont = Math.max(currentFont - 4, 22); epubFontPercent = Math.max(epubFontPercent - 8, 80); applyFontSize(); }
 
 function getActiveText() {
-  const selection = window.getSelection?.().toString().trim() || "";
-  if (selection.length > 12) return selection;
-  if (isEpub) return currentText?.trim() || "";
-  return currentText?.trim() || "";
+  return (currentText || "").trim();
 }
 
 function toggleMusic() {
   const trackIndex = Number(els.musicSelect.value || lastMusicIndex || 0);
   const track = MUSIC_TRACKS[trackIndex];
   if (!track) return;
+
   lastMusicIndex = trackIndex;
+  localStorage.setItem("santuario_music_index", String(lastMusicIndex));
 
   if (!musicAudio || musicAudio.src !== track.url) {
     stopMusic(false);
@@ -416,7 +389,6 @@ function playVoice() {
   const utterance = new SpeechSynthesisUtterance(text.slice(0, 4000));
   utterance.lang = "es-AR";
   utterance.rate = 0.92;
-  utterance.pitch = 1.0;
   speechSynthesis.speak(utterance);
 }
 function stopVoice() { speechSynthesis.cancel(); }
@@ -431,32 +403,29 @@ function summarizeText() {
   const sentences = segmentSentences(text);
   const keywords = topKeywords(text, 6);
   const first = (sentences[0] || "").trim();
-  const middle = (sentences[Math.floor(sentences.length / 2)] || "").trim();
-  const last = (sentences[sentences.length - 1] || "").trim();
+  const climax = (sentences[Math.floor(sentences.length / 2)] || "").trim();
 
   const themeLine = keywords.length
     ? `Las ideas que más insistencia muestran son: ${keywords.join(", ")}.`
-    : "La página deja una sensación de tensión, memoria y continuidad.";
+    : "La página deja una sensación de tensión y memoria.";
 
-  const interpretation = buildInterpretation(first, middle, last, keywords);
+  const question = `¿Qué cambia en esta página cuando la lees como conflicto, como memoria o como advertencia, en lugar de verla solo como información?`;
 
   els.iaContent.innerHTML = `
-    <h4>Núcleo</h4>
-    <p>${escapeHtml(first || "La lectura abre una escena de enfoque y expectativa.")}</p>
-    <h4>Presencias recurrentes</h4>
+    <h4>Eje temático</h4>
     <p>${escapeHtml(themeLine)}</p>
-    <h4>Interpretación</h4>
-    <p>${escapeHtml(interpretation)}</p>
-    <h4>Pregunta para continuar</h4>
-    <p>¿Qué cambia en esta página cuando la lees como conflicto, como memoria o como advertencia?</p>
-    <h4>Eco final</h4>
-    <p>${escapeHtml(last || "El cierre deja una vibración abierta, lista para seguir pensando.")}</p>
+    <h4>Premisa</h4>
+    <p>${escapeHtml(first || "La escena inicial deja una impresión de expectativa y cuidado.")}</p>
+    <h4>Clímax argumental</h4>
+    <p>${escapeHtml(climax || "La tensión central se despliega y deja una marca en el lector.")}</p>
+    <h4>Pregunta para el lector</h4>
+    <p>${escapeHtml(question)}</p>
   `;
   els.iaModal.classList.remove("hidden");
 }
 
 function segmentSentences(text) {
-  const clean = text.replace(/\s+/g, " ").trim();
+  const clean = String(text).replace(/\s+/g, " ").trim();
   if (!clean) return [];
   if (window.Intl && Intl.Segmenter) {
     return Array.from(new Intl.Segmenter("es", { granularity: "sentence" }).segment(clean))
@@ -467,7 +436,7 @@ function segmentSentences(text) {
 }
 
 function topKeywords(text, limit = 5) {
-  const words = text
+  const words = String(text)
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .split(/\s+/)
@@ -475,23 +444,12 @@ function topKeywords(text, limit = 5) {
     .filter(w => w.length > 3 && !STOPWORDS.has(w));
 
   const freq = new Map();
-  for (const w of words) {
-    freq.set(w, (freq.get(w) || 0) + 1);
-  }
+  for (const w of words) freq.set(w, (freq.get(w) || 0) + 1);
+
   return [...freq.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, limit)
     .map(([word]) => word);
-}
-
-function buildInterpretation(first, middle, last, keywords) {
-  const key = keywords.length ? keywords.slice(0, 3).join(", ") : "la memoria, la duda y la forma";
-  const parts = [];
-  if (first) parts.push(`La apertura sugiere un marco inicial ligado a ${key}.`);
-  if (middle) parts.push(`En el centro aparece una tensión que conviene leer con pausa, porque desplaza el sentido literal hacia una capa más humana.`);
-  if (last) parts.push(`El cierre no clausura: deja una resonancia que invita a seguir interpretando desde la experiencia del lector.`);
-  parts.push(`Como acompañante de lectura, la página pide observar no solo lo que dice, sino también lo que omite, repite o deja insinuado.`);
-  return parts.join(" ");
 }
 
 init();
