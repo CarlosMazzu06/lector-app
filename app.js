@@ -24,7 +24,7 @@ const BOOKS_FALLBACK = [
   }
 ];
 
-// Música generada localmente con Web Audio API – múltiples piezas, volumen ajustable
+// Música generada localmente – cinco piezas con nombre y subtítulo
 const MUSIC_TRACKS = [
   {
     id: "roble",
@@ -32,11 +32,11 @@ const MUSIC_TRACKS = [
     subtitle: "Arpegios graves y cálidos",
     loopMs: 16000,
     perform(ctx, dest, start) {
-      playTone(ctx, dest, start, 73.42, 3.6, { waveform: "sine", gain: 0.11, cutoff: 520, pan: -0.1 });
+      playTone(ctx, dest, start, 73.42, 3.6, { waveform: "sine", gain: 0.15, cutoff: 520, pan: -0.1 });
       const seq = [146.83, 174.61, 196.00, 174.61];
-      seq.forEach((freq, i) => playTone(ctx, dest, start + i * 0.85, freq, 0.85, { waveform: "triangle", gain: 0.16, cutoff: 1300, pan: i % 2 ? 0.12 : -0.12 }));
-      playChord(ctx, dest, start + 4.0, [220.00, 261.63, 329.63], 4.2, { waveform: "sine", gain: 0.10, cutoff: 1600, detuneStep: 2, pan: 0 });
-      playTone(ctx, dest, start + 9.0, 98.00, 2.8, { waveform: "sine", gain: 0.08, cutoff: 600, pan: -0.08 });
+      seq.forEach((freq, i) => playTone(ctx, dest, start + i * 0.85, freq, 0.85, { waveform: "triangle", gain: 0.20, cutoff: 1300, pan: i % 2 ? 0.12 : -0.12 }));
+      playChord(ctx, dest, start + 4.0, [220.00, 261.63, 329.63], 4.2, { waveform: "sine", gain: 0.13, cutoff: 1600, detuneStep: 2, pan: 0 });
+      playTone(ctx, dest, start + 9.0, 98.00, 2.8, { waveform: "sine", gain: 0.11, cutoff: 600, pan: -0.08 });
     }
   },
   {
@@ -47,23 +47,23 @@ const MUSIC_TRACKS = [
     perform(ctx, dest, start) {
       const chordA = [196.00, 246.94, 293.66];
       const chordB = [174.61, 220.00, 277.18];
-      playChord(ctx, dest, start, chordA, 4.8, { waveform: "sine", gain: 0.10, cutoff: 1500, detuneStep: 3, pan: 0 });
-      playTone(ctx, dest, start + 4.5, 392.00, 1.8, { waveform: "triangle", gain: 0.07, cutoff: 1800, pan: 0.2 });
-      playChord(ctx, dest, start + 6.4, chordB, 4.8, { waveform: "sine", gain: 0.10, cutoff: 1500, detuneStep: 3, pan: 0 });
-      playTone(ctx, dest, start + 12.0, 523.25, 1.2, { waveform: "sine", gain: 0.06, cutoff: 2000, pan: -0.2 });
+      playChord(ctx, dest, start, chordA, 4.8, { waveform: "sine", gain: 0.13, cutoff: 1500, detuneStep: 3, pan: 0 });
+      playTone(ctx, dest, start + 4.5, 392.00, 1.8, { waveform: "triangle", gain: 0.10, cutoff: 1800, pan: 0.2 });
+      playChord(ctx, dest, start + 6.4, chordB, 4.8, { waveform: "sine", gain: 0.13, cutoff: 1500, detuneStep: 3, pan: 0 });
+      playTone(ctx, dest, start + 12.0, 523.25, 1.2, { waveform: "sine", gain: 0.09, cutoff: 2000, pan: -0.2 });
     }
   },
   {
     id: "salon",
     title: "Salón Dorado",
-    subtitle: "Pulso elegante y vibración de cámara",
+    subtitle: "Pulso elegante y cámara",
     loopMs: 15000,
     perform(ctx, dest, start) {
       const bass = [110.00, 130.81, 146.83];
-      bass.forEach((freq, i) => playTone(ctx, dest, start + i * 1.3, freq, 1.1, { waveform: "sawtooth", gain: 0.07, cutoff: 900, pan: -0.15 }));
+      bass.forEach((freq, i) => playTone(ctx, dest, start + i * 1.3, freq, 1.1, { waveform: "sawtooth", gain: 0.10, cutoff: 900, pan: -0.15 }));
       const melody = [220.00, 246.94, 261.63, 329.63, 261.63];
-      melody.forEach((freq, i) => playTone(ctx, dest, start + 0.6 + i * 0.95, freq, 0.7, { waveform: "triangle", gain: 0.12, cutoff: 1700, pan: i % 2 ? 0.12 : -0.12 }));
-      playChord(ctx, dest, start + 7.0, [293.66, 369.99, 440.00], 3.5, { waveform: "triangle", gain: 0.10, cutoff: 1700, detuneStep: 4, pan: 0 });
+      melody.forEach((freq, i) => playTone(ctx, dest, start + 0.6 + i * 0.95, freq, 0.7, { waveform: "triangle", gain: 0.16, cutoff: 1700, pan: i % 2 ? 0.12 : -0.12 }));
+      playChord(ctx, dest, start + 7.0, [293.66, 369.99, 440.00], 3.5, { waveform: "triangle", gain: 0.13, cutoff: 1700, detuneStep: 4, pan: 0 });
     }
   },
   {
@@ -72,11 +72,11 @@ const MUSIC_TRACKS = [
     subtitle: "Campanas suaves y sombra baja",
     loopMs: 17000,
     perform(ctx, dest, start) {
-      playTone(ctx, dest, start, 98.00, 4.0, { waveform: "sine", gain: 0.09, cutoff: 500, pan: -0.08 });
-      playTone(ctx, dest, start + 1.2, 196.00, 0.5, { waveform: "square", gain: 0.05, cutoff: 2400, pan: 0.15 });
-      playTone(ctx, dest, start + 3.2, 261.63, 0.7, { waveform: "triangle", gain: 0.10, cutoff: 1800, pan: -0.1 });
-      playTone(ctx, dest, start + 6.6, 329.63, 0.9, { waveform: "triangle", gain: 0.09, cutoff: 1800, pan: 0.1 });
-      playTone(ctx, dest, start + 10.0, 392.00, 0.6, { waveform: "sine", gain: 0.08, cutoff: 2200, pan: 0.2 });
+      playTone(ctx, dest, start, 98.00, 4.0, { waveform: "sine", gain: 0.12, cutoff: 500, pan: -0.08 });
+      playTone(ctx, dest, start + 1.2, 196.00, 0.5, { waveform: "square", gain: 0.08, cutoff: 2400, pan: 0.15 });
+      playTone(ctx, dest, start + 3.2, 261.63, 0.7, { waveform: "triangle", gain: 0.12, cutoff: 1800, pan: -0.1 });
+      playTone(ctx, dest, start + 6.6, 329.63, 0.9, { waveform: "triangle", gain: 0.11, cutoff: 1800, pan: 0.1 });
+      playTone(ctx, dest, start + 10.0, 392.00, 0.6, { waveform: "sine", gain: 0.10, cutoff: 2200, pan: 0.2 });
     }
   },
   {
@@ -85,11 +85,11 @@ const MUSIC_TRACKS = [
     subtitle: "Drone profundo y brillo lejano",
     loopMs: 20000,
     perform(ctx, dest, start) {
-      playTone(ctx, dest, start, 65.41, 7.0, { waveform: "sine", gain: 0.10, cutoff: 420, pan: 0 });
-      playTone(ctx, dest, start + 1.8, 130.81, 5.0, { waveform: "triangle", gain: 0.08, cutoff: 900, pan: -0.1 });
-      playTone(ctx, dest, start + 4.0, 261.63, 2.0, { waveform: "sine", gain: 0.05, cutoff: 1600, pan: 0.12 });
-      playTone(ctx, dest, start + 8.0, 523.25, 1.2, { waveform: "sine", gain: 0.05, cutoff: 2500, pan: -0.12 });
-      playTone(ctx, dest, start + 12.0, 392.00, 1.0, { waveform: "triangle", gain: 0.06, cutoff: 1800, pan: 0.08 });
+      playTone(ctx, dest, start, 65.41, 7.0, { waveform: "sine", gain: 0.12, cutoff: 420, pan: 0 });
+      playTone(ctx, dest, start + 1.8, 130.81, 5.0, { waveform: "triangle", gain: 0.10, cutoff: 900, pan: -0.1 });
+      playTone(ctx, dest, start + 4.0, 261.63, 2.0, { waveform: "sine", gain: 0.08, cutoff: 1600, pan: 0.12 });
+      playTone(ctx, dest, start + 8.0, 523.25, 1.2, { waveform: "sine", gain: 0.08, cutoff: 2500, pan: -0.12 });
+      playTone(ctx, dest, start + 12.0, 392.00, 1.0, { waveform: "triangle", gain: 0.09, cutoff: 1800, pan: 0.08 });
     }
   }
 ];
@@ -116,10 +116,11 @@ let epubFontPercent = 100;
 
 let musicContext = null;
 let musicMasterGain = null;
+let musicCompressor = null;
 let musicPlaying = false;
 let musicLoopHandle = null;
 let musicCurrentTrackId = localStorage.getItem("santuario_music_track") || MUSIC_TRACKS[0].id;
-let musicVolume = clamp(Number(localStorage.getItem("santuario_music_volume") || "0.90"), 0.35, 1);
+let musicVolume = clamp(Number(localStorage.getItem("santuario_music_volume") || "1.15"), 0.6, 1.5);
 let selectedVoiceURI = localStorage.getItem("santuario_voice_uri") || "";
 let voiceRate = clamp(Number(localStorage.getItem("santuario_voice_rate") || "0.96"), 0.8, 1.1);
 let availableVoices = [];
@@ -140,10 +141,11 @@ const els = {
   iaModal: $("iaModal"),
   iaContent: $("iaContent"),
   btnMusica: $("btn-musica"),
-  musicSelect: $("musicSelect"),
+  musicBoard: $("musicBoard"),
+  musicNow: $("musicNow"),
+  musicVolume: $("musicVolume"),
   voiceSelect: $("voiceSelect"),
-  voiceRateSelect: $("voiceRateSelect"),
-  musicVolume: $("musicVolume")
+  voiceRateSelect: $("voiceRateSelect")
 };
 
 function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
@@ -179,15 +181,22 @@ function closeModals() { els.settingsModal.classList.add("hidden"); els.iaModal.
 function cleanup() {
   if (currentEpub && typeof currentEpub.destroy === "function") { try { currentEpub.destroy(); } catch (_) {} }
   currentPDF = null; currentEpub = null; rendition = null; isEpub = false; currentPage = 1; currentText = ""; currentBookTitle = "";
-  els.readerDiv.innerHTML = ""; els.readerDiv.style.fontSize = `${28}px`; pdfZoom = 1.0; epubFontPercent = 100;
+  els.readerDiv.innerHTML = ""; els.readerDiv.style.fontSize = "28px"; pdfZoom = 1.0; epubFontPercent = 100;
 }
 
 function resolveUrl(path) { return encodeURI(path); }
 
-function renderMusicOptions() {
-  els.musicSelect.innerHTML = MUSIC_TRACKS.map(track => `<option value="${track.id}">${escapeHtml(track.title)} — ${escapeHtml(track.subtitle)}</option>`).join("");
-  els.musicSelect.value = musicCurrentTrackId;
-  els.musicVolume.value = String(musicVolume);
+function renderMusicBoard() {
+  els.musicBoard.innerHTML = MUSIC_TRACKS.map(track => `
+    <button class="music-card ${track.id === musicCurrentTrackId ? "active" : ""}" onclick="selectMusic('${track.id}')">
+      <span class="music-card-title">${escapeHtml(track.title)}</span>
+      <span class="music-card-subtitle">${escapeHtml(track.subtitle)}</span>
+    </button>
+  `).join("");
+  const selected = MUSIC_TRACKS.find(t => t.id === musicCurrentTrackId) || MUSIC_TRACKS[0];
+  els.musicNow.textContent = selected
+    ? `Pieza elegida: ${selected.title} — ${selected.subtitle}`
+    : "Seleccioná una pieza para iniciar la música.";
 }
 
 function populateVoices() {
@@ -203,7 +212,7 @@ async function loadBooksFromGitHub() {
   const res = await fetch(GITHUB_API, { cache: "no-store" });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const files = await res.json();
-  books = files.filter(f => f.type === "file" && /\.(epub|pdf)$/i.test(f.name)).map(f => ({ title: f.name.replace(/\.(epub|pdf)$/i, "").replace(/[_-]+/g, " ").trim(), file: f.download_url, type: f.name.toLowerCase().endsWith(".epub") ? "epub" : "pdf" })).sort((a, b) => a.title.localeCompare(b.title, "es"));
+  books = files.filter(f => f.type === "file" && /\.(epub|pdf)$/i.test(f.name)).map(f => ({ title: f.name.replace(/\.(epub|pdf)$/i, "").replace(/[_-]+/g, " ").trim(), file: f.path, type: f.name.toLowerCase().endsWith(".epub") ? "epub" : "pdf" })).sort((a, b) => a.title.localeCompare(b.title, "es"));
 }
 
 function renderBooks() {
@@ -212,10 +221,9 @@ function renderBooks() {
 }
 
 async function init() {
-  renderMusicOptions(); populateVoices();
+  renderMusicBoard(); populateVoices();
   els.fileInput.addEventListener("change", handleLocalFile);
-  els.musicSelect.addEventListener("change", async () => { musicCurrentTrackId = els.musicSelect.value || MUSIC_TRACKS[0].id; localStorage.setItem("santuario_music_track", musicCurrentTrackId); if (musicPlaying) { await startMusic(musicCurrentTrackId); } });
-  els.musicVolume.addEventListener("input", () => { setMusicVolume(Number(els.musicVolume.value)); });
+  els.musicVolume.addEventListener("input", () => setMusicVolume(Number(els.musicVolume.value)));
   els.voiceSelect.addEventListener("change", () => { selectedVoiceURI = els.voiceSelect.value; localStorage.setItem("santuario_voice_uri", selectedVoiceURI); });
   els.voiceRateSelect.addEventListener("change", () => { voiceRate = Number(els.voiceRateSelect.value); localStorage.setItem("santuario_voice_rate", String(voiceRate)); });
   window.addEventListener("resize", () => { if (isEpub && rendition) { try { rendition.resize(window.innerWidth, window.innerHeight); } catch (_) {} } if (!isEpub && currentPDF) { renderPDFPage().catch(() => {}); } });
@@ -226,8 +234,9 @@ async function init() {
 }
 
 function setInitialSelectors() {
-  els.musicSelect.value = musicCurrentTrackId; els.musicVolume.value = String(musicVolume); els.voiceRateSelect.value = String(voiceRate);
+  els.musicVolume.value = String(musicVolume); els.voiceRateSelect.value = String(voiceRate);
   if (selectedVoiceURI) { els.voiceSelect.value = selectedVoiceURI; }
+  renderMusicBoard();
 }
 
 async function loadRepoBook(index) {
@@ -256,7 +265,7 @@ async function handleLocalFile(e) {
 
 async function loadEpubFromUrl(url, title) {
   cleanup(); isEpub = true; currentBookTitle = title; openReader(title);
-  await wait(200);
+  await wait(220);
   currentEpub = ePub(url); await currentEpub.ready;
   rendition = currentEpub.renderTo("reader", { width: "100%", height: Math.max(window.innerHeight - 130, 400), flow: "scrolled-doc", spread: "none" });
   if (rendition?.themes) { try { rendition.themes.default({ body: { background: "#F4ECD8", color: "#2C1810", "font-family": "Cormorant Garamond, serif", "line-height": "1.8" } }); rendition.themes.fontSize(`${epubFontPercent}%`); } catch (_) {} }
@@ -306,10 +315,11 @@ async function prevPage() { stopVoice(); if (isEpub && rendition) { await rendit
 // --- Música generada ---
 function getTrackById(id) { return MUSIC_TRACKS.find(track => track.id === id) || MUSIC_TRACKS[0]; }
 async function ensureMusicContext() {
-  if (!musicContext) { musicContext = new (window.AudioContext || window.webkitAudioContext)(); musicMasterGain = musicContext.createGain(); musicMasterGain.gain.value = musicVolume; musicMasterGain.connect(musicContext.destination); }
+  if (!musicContext) { musicContext = new (window.AudioContext || window.webkitAudioContext)(); musicCompressor = musicContext.createDynamicsCompressor(); musicMasterGain = musicContext.createGain(); musicCompressor.threshold.value = -28; musicCompressor.knee.value = 24; musicCompressor.ratio.value = 8; musicCompressor.attack.value = 0.004; musicCompressor.release.value = 0.25; musicMasterGain.gain.value = musicVolume; musicMasterGain.connect(musicCompressor); musicCompressor.connect(musicContext.destination); }
   if (musicContext.state === "suspended") { await musicContext.resume(); }
+  if (musicMasterGain) { musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.03); }
 }
-function setMusicVolume(value) { musicVolume = clamp(Number(value), 0.35, 1); localStorage.setItem("santuario_music_volume", String(musicVolume)); if (musicMasterGain && musicContext) { musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.03); } }
+function setMusicVolume(value) { musicVolume = clamp(Number(value), 0.6, 1.5); localStorage.setItem("santuario_music_volume", String(musicVolume)); if (musicMasterGain && musicContext) { musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.03); } }
 function playTone(ctx, destination, startTime, freq, duration, opts = {}) {
   const osc = ctx.createOscillator(); osc.type = opts.waveform || "sine"; osc.frequency.setValueAtTime(freq, startTime);
   const filter = ctx.createBiquadFilter(); filter.type = opts.filter || "lowpass"; filter.frequency.setValueAtTime(opts.cutoff || 1800, startTime); filter.Q.value = opts.q || 0.8;
@@ -322,8 +332,9 @@ function playTone(ctx, destination, startTime, freq, duration, opts = {}) {
 function playChord(ctx, destination, startTime, freqs, duration, opts = {}) { freqs.forEach((freq, index) => { const detune = opts.detuneStep ? (index - (freqs.length - 1) / 2) * opts.detuneStep : 0; playTone(ctx, destination, startTime + index * 0.015, freq, duration, { ...opts, detune }); }); }
 function stopMusic(updateButton = true) { musicPlaying = false; clearTimeout(musicLoopHandle); musicLoopHandle = null; if (musicContext && musicMasterGain) { try { musicMasterGain.gain.setTargetAtTime(0.0001, musicContext.currentTime, 0.02); } catch (_) {} } if (updateButton) { els.btnMusica.classList.remove("activo"); els.btnMusica.setAttribute("aria-pressed", "false"); } }
 function scheduleMusic(track) { clearTimeout(musicLoopHandle); const loop = () => { if (!musicPlaying || !musicContext || !musicMasterGain) return; const start = musicContext.currentTime + 0.05; track.perform(musicContext, musicMasterGain, start); musicLoopHandle = setTimeout(loop, track.loopMs); }; loop(); }
-async function startMusic(trackId) { await ensureMusicContext(); const track = getTrackById(trackId); if (!track) return; stopMusic(false); musicCurrentTrackId = track.id; localStorage.setItem("santuario_music_track", musicCurrentTrackId); musicPlaying = true; els.btnMusica.classList.add("activo"); els.btnMusica.setAttribute("aria-pressed", "true"); scheduleMusic(track); }
-async function toggleMusic() { const selectedId = els.musicSelect.value || musicCurrentTrackId || MUSIC_TRACKS[0].id; if (musicPlaying && selectedId === musicCurrentTrackId) { stopMusic(); return; } await startMusic(selectedId); }
+async function startMusic(trackId) { await ensureMusicContext(); const track = getTrackById(trackId); if (!track) return; stopMusic(false); musicCurrentTrackId = track.id; localStorage.setItem("santuario_music_track", musicCurrentTrackId); renderMusicBoard(); musicPlaying = true; els.btnMusica.classList.add("activo"); els.btnMusica.setAttribute("aria-pressed", "true"); scheduleMusic(track); }
+async function toggleMusic() { const selectedId = musicCurrentTrackId || MUSIC_TRACKS[0].id; if (musicPlaying && selectedId === musicCurrentTrackId) { stopMusic(); return; } await startMusic(selectedId); }
+async function selectMusic(id) { musicCurrentTrackId = id; localStorage.setItem("santuario_music_track", musicCurrentTrackId); renderMusicBoard(); await startMusic(id); }
 
 // --- Voz ---
 function getVoice() { const voices = speechSynthesis.getVoices() || []; const selected = voices.find(v => v.voiceURI === els.voiceSelect.value); if (selected) return selected; return voices.find(v => /^es/i.test(v.lang)) || voices[0] || null; }
