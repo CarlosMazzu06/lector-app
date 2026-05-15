@@ -53,6 +53,8 @@ body {
   opacity: 1;
   pointer-events: auto;
   z-index: 10;
+}
+#homeScreen.activa {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -65,6 +67,7 @@ body {
   opacity: 0;
   pointer-events: none;
   z-index: -10;
+  display: block;
 }
 .hidden {
   display: none !important;
@@ -159,7 +162,13 @@ body {
 .btn-book:active { transform: scale(0.985); }
 
 .book-icon { font-size: 24px; color: var(--oro-brillante); flex: 0 0 auto; }
-.book-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.book-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
 .book-meta { font-size: 12px; color: var(--oro); margin-top: 4px; letter-spacing: 1px; }
 
 .btn-pluma {
@@ -189,6 +198,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 14px 18px;
   background: linear-gradient(to bottom, rgba(10,4,2,0.95), transparent);
 }
@@ -311,7 +321,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 22px;
-  width: min(480px, 95vw);
+  width: min(520px, 95vw);
   box-shadow: 0 25px 50px rgba(0,0,0,0.6);
 }
 
@@ -399,6 +409,56 @@ body {
   accent-color: var(--oro);
 }
 
+.music-board {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.music-card {
+  text-align: left;
+  border: 1px solid rgba(197,160,89,0.32);
+  background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  color: var(--pergamino);
+  border-radius: 16px;
+  padding: 12px 14px;
+  cursor: pointer;
+  min-height: 82px;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.music-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--oro-brillante);
+}
+.music-card.active {
+  background: linear-gradient(180deg, rgba(232,195,122,0.18), rgba(197,160,89,0.10));
+  border-color: var(--oro);
+  color: var(--oro-brillante);
+}
+.music-card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.music-card-subtitle {
+  font-size: 12px;
+  opacity: 0.9;
+  color: var(--pergamino-oscuro);
+}
+.music-card.active .music-card-subtitle { color: var(--oro); }
+
+.music-now {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--pergamino-oscuro);
+  font-style: italic;
+}
+
 .ia-text {
   font-size: 17px;
   line-height: 1.7;
@@ -454,4 +514,5 @@ body {
   #reader { font-size: 24px; width: 92vw; }
   .book-grid { grid-template-columns: 1fr; max-height: 36vh; }
   .nav-btn-big { width: 50px; height: 50px; font-size: 22px; }
+  .music-board { grid-template-columns: 1fr; }
 }
