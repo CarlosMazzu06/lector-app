@@ -202,151 +202,573 @@ function renderMusicBoard() {
 function populateVoices() {
   const voices = speechSynthesis.getVoices() || [];
   if (!voices.length) { els.voiceSelect.innerHTML = `<option value="">Voz del sistema</option>`; return; }
-  availableVoices = voices.slice().sort((a, b) => { const aEs = /^es/i.test(a.lang) ? 0 : 1; const bEs = /^es/i.test(b.lang) ? 0 : 1; return aEs - bEs || a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name); });
+  availableVoices = voices.slice().sort((a, b) => {
+    const aEs = /^es/i.test(a.lang) ? 0 : 1;
+    const bEs = /^es/i.test(b.lang) ? 0 : 1;
+    return aEs - bEs || a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name);
+  });
   els.voiceSelect.innerHTML = availableVoices.map(v => `<option value="${escapeAttr(v.voiceURI)}">${escapeHtml(v.name)} · ${escapeHtml(v.lang)}</option>`).join("");
   const preferred = availableVoices.find(v => v.voiceURI === selectedVoiceURI) || availableVoices.find(v => /^es/i.test(v.lang)) || availableVoices[0];
-  if (preferred) { els.voiceSelect.value = preferred.voiceURI; selectedVoiceURI = preferred.voiceURI; localStorage.setItem("santuario_voice_uri", selectedVoiceURI); }
+  if (preferred) {
+    els.voiceSelect.value = preferred.voiceURI;
+    selectedVoiceURI = preferred.voiceURI;
+    localStorage.setItem("santuario_voice_uri", selectedVoiceURI);
+  }
 }
 
 async function loadBooksFromGitHub() {
   const res = await fetch(GITHUB_API, { cache: "no-store" });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const files = await res.json();
-  books = files.filter(f => f.type === "file" && /\.(epub|pdf)$/i.test(f.name)).map(f => ({ title: f.name.replace(/\.(epub|pdf)$/i, "").replace(/[_-]+/g, " ").trim(), file: f.path, type: f.name.toLowerCase().endsWith(".epub") ? "epub" : "pdf" })).sort((a, b) => a.title.localeCompare(b.title, "es"));
+  books = files
+    .filter(f => f.type === "file" && /\.(epub|pdf)$/i.test(f.name))
+    .map(f => ({
+      title: f.name.replace(/\.(epub|pdf)$/i, "").replace(/[_-]+/g, " ").trim(),
+      file: f.download_url,
+      type: f.name.toLowerCase().endsWith(".epub") ? "epub" : "pdf"
+    }))
+    .sort((a, b) => a.title.localeCompare(b.title, "es"));
 }
 
 function renderBooks() {
-  if (!books.length) { els.bookGrid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:var(--pergamino-oscuro);">No se encontraron libros en /book.</p>`; return; }
-  els.bookGrid.innerHTML = books.map((b, i) => `<button class="btn-book" onclick="loadRepoBook(${i})" title="${escapeAttr(b.title)}"><span class="book-icon">${b.type === "epub" ? "✑" : "▣"}</span><div><div class="book-title">${escapeHtml(b.title)}</div><div class="book-meta">${b.type.toUpperCase()}</div></div></button>`).join("");
+  if (!books.length) {
+    els.bookGrid.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:var(--pergamino-oscuro);">No se encontraron libros en /book.</p>`;
+    return;
+  }
+  els.bookGrid.innerHTML = books.map((b, i) => `
+    <button class="btn-book" onclick="loadRepoBook(${i})" title="${escapeAttr(b.title)}">
+      <span class="book-icon">${b.type === "epub" ? "✑" : "▣"}</span>
+      <div>
+        <div class="book-title">${escapeHtml(b.title)}</div>
+        <div class="book-meta">${b.type.toUpperCase()}</div>
+      </div>
+    </button>
+  `).join("");
 }
 
 async function init() {
-  renderMusicBoard(); populateVoices();
+  renderMusicBoard();
+  populateVoices();
+
   els.fileInput.addEventListener("change", handleLocalFile);
   els.musicVolume.addEventListener("input", () => setMusicVolume(Number(els.musicVolume.value)));
-  els.voiceSelect.addEventListener("change", () => { selectedVoiceURI = els.voiceSelect.value; localStorage.setItem("santuario_voice_uri", selectedVoiceURI); });
-  els.voiceRateSelect.addEventListener("change", () => { voiceRate = Number(els.voiceRateSelect.value); localStorage.setItem("santuario_voice_rate", String(voiceRate)); });
-  window.addEventListener("resize", () => { if (isEpub && rendition) { try { rendition.resize(window.innerWidth, window.innerHeight); } catch (_) {} } if (!isEpub && currentPDF) { renderPDFPage().catch(() => {}); } });
-  speechSynthesis.onvoiceschanged = populateVoices; setTimeout(populateVoices, 400);
-  try { await loadBooksFromGitHub(); } catch (err) { console.warn("Usando catálogo de respaldo porque la API no respondió.", err); books = BOOKS_FALLBACK; }
+  els.voiceSelect.addEventListener("change", () => {
+    selectedVoiceURI = els.voiceSelect.value;
+    localStorage.setItem("santuario_voice_uri", selectedVoiceURI);
+  });
+  els.voiceRateSelect.addEventListener("change", () => {
+    voiceRate = Number(els.voiceRateSelect.value);
+    localStorage.setItem("santuario_voice_rate", String(voiceRate));
+  });
+
+  window.addEventListener("resize", () => {
+    if (isEpub && rendition) {
+      try { rendition.resize(window.innerWidth, window.innerHeight); } catch (_) {}
+    }
+    if (!isEpub && currentPDF) {
+      renderPDFPage().catch(() => {});
+    }
+  });
+
+  speechSynthesis.onvoiceschanged = populateVoices;
+  setTimeout(populateVoices, 400);
+
+  try {
+    await loadBooksFromGitHub();
+  } catch (err) {
+    console.warn("Usando catálogo de respaldo porque la API no respondió.", err);
+    books = BOOKS_FALLBACK;
+  }
+
   renderBooks();
   setInitialSelectors();
 }
 
 function setInitialSelectors() {
-  els.musicVolume.value = String(musicVolume); els.voiceRateSelect.value = String(voiceRate);
-  if (selectedVoiceURI) { els.voiceSelect.value = selectedVoiceURI; }
+  els.musicVolume.value = String(musicVolume);
+  els.voiceRateSelect.value = String(voiceRate);
+  if (selectedVoiceURI) {
+    els.voiceSelect.value = selectedVoiceURI;
+  }
   renderMusicBoard();
 }
 
 async function loadRepoBook(index) {
-  const book = books[index]; if (!book) return;
+  const book = books[index];
+  if (!book) return;
+
   showLoader(`Abriendo ${book.type.toUpperCase()}…`, book.type === "epub" ? "La carga puede tardar unos segundos." : "");
+
   try {
-    const response = await fetch(resolveUrl(book.file), { cache: "no-store" }); if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const response = await fetch(resolveUrl(book.file), { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const buffer = await response.arrayBuffer();
-    if (book.type === "epub") { const blob = new Blob([buffer], { type: "application/epub+zip" }); const url = URL.createObjectURL(blob); await loadEpubFromUrl(url, book.title); }
-    else { await loadPDF(buffer, book.title); }
-  } catch (err) { console.error(err); alert(`No se pudo abrir "${book.title}". Verifica que el archivo exista en /book/ y que el nombre sea exacto.`); }
-  finally { hideLoader(); }
+
+    if (book.type === "epub") {
+      const blob = new Blob([buffer], { type: "application/epub+zip" });
+      const url = URL.createObjectURL(blob);
+      await loadEpubFromUrl(url, book.title);
+    } else {
+      await loadPDF(buffer, book.title);
+    }
+  } catch (err) {
+    console.error(err);
+    alert(`No se pudo abrir "${book.title}". Verifica que el archivo exista en /book/ y que el nombre sea exacto.`);
+  } finally {
+    hideLoader();
+  }
 }
 
 async function handleLocalFile(e) {
-  const file = e.target.files?.[0]; if (!file) return;
+  const file = e.target.files?.[0];
+  if (!file) return;
+
   showLoader("Procesando archivo local…", file.name.toLowerCase().endsWith(".epub") ? "Preparando EPUB…" : "Preparando PDF…");
+
   try {
-    const buffer = await file.arrayBuffer(); const name = file.name.toLowerCase();
-    if (name.endsWith(".epub")) { const blob = new Blob([buffer], { type: "application/epub+zip" }); const url = URL.createObjectURL(blob); await loadEpubFromUrl(url, file.name); }
-    else if (name.endsWith(".pdf") || file.type === "application/pdf") { await loadPDF(buffer, file.name); }
-    else { alert("Formato no compatible. Solo PDF o EPUB."); }
-  } catch (err) { console.error(err); alert("El archivo parece dañado o protegido."); }
-  finally { hideLoader(); els.fileInput.value = ""; }
+    const buffer = await file.arrayBuffer();
+    const name = file.name.toLowerCase();
+
+    if (name.endsWith(".epub")) {
+      const blob = new Blob([buffer], { type: "application/epub+zip" });
+      const url = URL.createObjectURL(blob);
+      await loadEpubFromUrl(url, file.name);
+    } else if (name.endsWith(".pdf") || file.type === "application/pdf") {
+      await loadPDF(buffer, file.name);
+    } else {
+      alert("Formato no compatible. Solo PDF o EPUB.");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("El archivo parece dañado o protegido.");
+  } finally {
+    hideLoader();
+    els.fileInput.value = "";
+  }
 }
 
 async function loadEpubFromUrl(url, title) {
-  cleanup(); isEpub = true; currentBookTitle = title; openReader(title);
+  cleanup();
+  isEpub = true;
+  currentBookTitle = title;
+  openReader(title);
+
   await wait(220);
-  currentEpub = ePub(url); await currentEpub.ready;
-  rendition = currentEpub.renderTo("reader", { width: "100%", height: Math.max(window.innerHeight - 130, 400), flow: "scrolled-doc", spread: "none" });
-  if (rendition?.themes) { try { rendition.themes.default({ body: { background: "#F4ECD8", color: "#2C1810", "font-family": "Cormorant Garamond, serif", "line-height": "1.8" } }); rendition.themes.fontSize(`${epubFontPercent}%`); } catch (_) {} }
-  rendition.on("rendered", refreshVisibleText); rendition.on("relocated", refreshVisibleText);
-  await rendition.display(); refreshVisibleText(); els.title.textContent = title;
+
+  currentEpub = ePub(url);
+  await currentEpub.ready;
+
+  rendition = currentEpub.renderTo("reader", {
+    width: "100%",
+    height: Math.max(window.innerHeight - 130, 400),
+    flow: "scrolled-doc",
+    spread: "none"
+  });
+
+  if (rendition?.themes) {
+    try {
+      rendition.themes.default({
+        body: {
+          background: "#F4ECD8",
+          color: "#2C1810",
+          "font-family": "Cormorant Garamond, serif",
+          "line-height": "1.8"
+        }
+      });
+      rendition.themes.fontSize(`${epubFontPercent}%`);
+    } catch (_) {}
+  }
+
+  rendition.on("rendered", refreshVisibleText);
+  rendition.on("relocated", refreshVisibleText);
+
+  await rendition.display();
+  refreshVisibleText();
+  els.title.textContent = title;
 }
 
 async function loadPDF(buffer, title) {
-  cleanup(); isEpub = false; currentBookTitle = title; currentPDF = await pdfjsLib.getDocument({ data: buffer }).promise; currentPage = 1; openReader(title); await renderPDFPage();
+  cleanup();
+  isEpub = false;
+  currentBookTitle = title;
+  currentPDF = await pdfjsLib.getDocument({ data: buffer }).promise;
+  currentPage = 1;
+  openReader(title);
+  await renderPDFPage();
 }
 
 async function renderPDFPage() {
   if (!currentPDF) return;
-  const page = await currentPDF.getPage(currentPage); const content = await page.getTextContent(); currentText = content.items.map(item => item.str).join(" ").replace(/\s+/g, " ").trim();
-  const baseScale = Math.max(1.05, Math.min(1.65, window.innerWidth / 760)); const viewport = page.getViewport({ scale: baseScale * pdfZoom });
-  const canvas = document.createElement("canvas"); canvas.width = viewport.width; canvas.height = viewport.height;
-  canvas.style.display = "block"; canvas.style.margin = "0 auto"; canvas.style.maxWidth = "100%"; canvas.style.height = "auto"; canvas.style.borderRadius = "14px"; canvas.style.boxShadow = "0 12px 30px rgba(0,0,0,0.10)";
+
+  const page = await currentPDF.getPage(currentPage);
+  const content = await page.getTextContent();
+  currentText = content.items.map(item => item.str).join(" ").replace(/\s+/g, " ").trim();
+
+  const baseScale = Math.max(1.05, Math.min(1.65, window.innerWidth / 760));
+  const viewport = page.getViewport({ scale: baseScale * pdfZoom });
+
+  const canvas = document.createElement("canvas");
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  canvas.style.display = "block";
+  canvas.style.margin = "0 auto";
+  canvas.style.maxWidth = "100%";
+  canvas.style.height = "auto";
+  canvas.style.borderRadius = "14px";
+  canvas.style.boxShadow = "0 12px 30px rgba(0,0,0,0.10)";
+
   await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
-  els.readerDiv.innerHTML = ""; els.readerDiv.appendChild(canvas); els.readerContainer.scrollTop = 0;
+
+  els.readerDiv.innerHTML = "";
+  els.readerDiv.appendChild(canvas);
+  els.readerContainer.scrollTop = 0;
   els.title.textContent = `${currentBookTitle} · Pág. ${currentPage}`;
 }
 
 function refreshVisibleText() {
-  setTimeout(() => { if (!isEpub) return; try { const iframe = document.querySelector("#reader iframe"); const doc = iframe?.contentDocument || iframe?.contentWindow?.document; const text = doc?.body?.innerText?.replace(/\s+/g, " ").trim(); if (text) currentText = text; } catch (_) {} }, 350);
+  setTimeout(() => {
+    if (!isEpub) return;
+    try {
+      const iframe = document.querySelector("#reader iframe");
+      const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
+      const text = doc?.body?.innerText?.replace(/\s+/g, " ").trim();
+      if (text) currentText = text;
+    } catch (_) {}
+  }, 350);
 }
 
 function extractVisibleText() {
-  const selection = window.getSelection?.().toString().trim() || ""; if (selection.length > 12) return selection;
-  if (isEpub) { try { const iframe = document.querySelector("#reader iframe"); const doc = iframe?.contentDocument || iframe?.contentWindow?.document; const text = doc?.body?.innerText?.replace(/\s+/g, " ").trim(); if (text) { currentText = text; return text; } } catch (_) {} }
+  const selection = window.getSelection?.().toString().trim() || "";
+  if (selection.length > 12) return selection;
+
+  if (isEpub) {
+    try {
+      const iframe = document.querySelector("#reader iframe");
+      const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
+      const text = doc?.body?.innerText?.replace(/\s+/g, " ").trim();
+      if (text) {
+        currentText = text;
+        return text;
+      }
+    } catch (_) {}
+  }
+
   return (currentText || "").trim();
 }
 
-function applyEpubFont() { if (rendition?.themes) { try { rendition.themes.fontSize(`${epubFontPercent}%`); } catch (_) {} } }
+function applyEpubFont() {
+  if (rendition?.themes) {
+    try { rendition.themes.fontSize(`${epubFontPercent}%`); } catch (_) {}
+  }
+}
 
 async function zoomIn() {
-  if (isEpub) { epubFontPercent = Math.min(epubFontPercent + 8, 180); applyEpubFont(); }
-  else { pdfZoom = Math.min(pdfZoom + 0.12, 1.8); await renderPDFPage(); }
-}
-async function zoomOut() {
-  if (isEpub) { epubFontPercent = Math.max(epubFontPercent - 8, 80); applyEpubFont(); }
-  else { pdfZoom = Math.max(pdfZoom - 0.12, 0.78); await renderPDFPage(); }
+  if (isEpub) {
+    epubFontPercent = Math.min(epubFontPercent + 8, 180);
+    applyEpubFont();
+  } else {
+    pdfZoom = Math.min(pdfZoom + 0.12, 1.8);
+    await renderPDFPage();
+  }
 }
 
-async function nextPage() { stopVoice(); if (isEpub && rendition) { await rendition.next(); refreshVisibleText(); } else if (currentPDF && currentPage < currentPDF.numPages) { currentPage++; await renderPDFPage(); } }
-async function prevPage() { stopVoice(); if (isEpub && rendition) { await rendition.prev(); refreshVisibleText(); } else if (currentPDF && currentPage > 1) { currentPage--; await renderPDFPage(); } }
+async function zoomOut() {
+  if (isEpub) {
+    epubFontPercent = Math.max(epubFontPercent - 8, 80);
+    applyEpubFont();
+  } else {
+    pdfZoom = Math.max(pdfZoom - 0.12, 0.78);
+    await renderPDFPage();
+  }
+}
+
+async function nextPage() {
+  stopVoice();
+  if (isEpub && rendition) {
+    await rendition.next();
+    refreshVisibleText();
+  } else if (currentPDF && currentPage < currentPDF.numPages) {
+    currentPage++;
+    await renderPDFPage();
+  }
+}
+
+async function prevPage() {
+  stopVoice();
+  if (isEpub && rendition) {
+    await rendition.prev();
+    refreshVisibleText();
+  } else if (currentPDF && currentPage > 1) {
+    currentPage--;
+    await renderPDFPage();
+  }
+}
 
 // --- Música generada ---
-function getTrackById(id) { return MUSIC_TRACKS.find(track => track.id === id) || MUSIC_TRACKS[0]; }
+function getTrackById(id) {
+  return MUSIC_TRACKS.find(track => track.id === id) || MUSIC_TRACKS[0];
+}
+
 async function ensureMusicContext() {
-  if (!musicContext) { musicContext = new (window.AudioContext || window.webkitAudioContext)(); musicCompressor = musicContext.createDynamicsCompressor(); musicMasterGain = musicContext.createGain(); musicCompressor.threshold.value = -28; musicCompressor.knee.value = 24; musicCompressor.ratio.value = 8; musicCompressor.attack.value = 0.004; musicCompressor.release.value = 0.25; musicMasterGain.gain.value = musicVolume; musicMasterGain.connect(musicCompressor); musicCompressor.connect(musicContext.destination); }
-  if (musicContext.state === "suspended") { await musicContext.resume(); }
-  if (musicMasterGain) { musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.03); }
+  if (!musicContext) {
+    musicContext = new (window.AudioContext || window.webkitAudioContext)();
+    musicCompressor = musicContext.createDynamicsCompressor();
+    musicMasterGain = musicContext.createGain();
+    musicCompressor.threshold.value = -28;
+    musicCompressor.knee.value = 24;
+    musicCompressor.ratio.value = 8;
+    musicCompressor.attack.value = 0.004;
+    musicCompressor.release.value = 0.25;
+    musicMasterGain.gain.value = musicVolume;
+    musicMasterGain.connect(musicCompressor);
+    musicCompressor.connect(musicContext.destination);
+  }
+  if (musicContext.state === "suspended") {
+    await musicContext.resume();
+  }
+  if (musicMasterGain) {
+    musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.03);
+  }
 }
-function setMusicVolume(value) { musicVolume = clamp(Number(value), 0.6, 1.5); localStorage.setItem("santuario_music_volume", String(musicVolume)); if (musicMasterGain && musicContext) { musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.03); } }
+
+function setMusicVolume(value) {
+  musicVolume = clamp(Number(value), 0.6, 1.5);
+  localStorage.setItem("santuario_music_volume", String(musicVolume));
+  if (musicMasterGain && musicContext) {
+    musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.03);
+  }
+}
+
 function playTone(ctx, destination, startTime, freq, duration, opts = {}) {
-  const osc = ctx.createOscillator(); osc.type = opts.waveform || "sine"; osc.frequency.setValueAtTime(freq, startTime);
-  const filter = ctx.createBiquadFilter(); filter.type = opts.filter || "lowpass"; filter.frequency.setValueAtTime(opts.cutoff || 1800, startTime); filter.Q.value = opts.q || 0.8;
-  const gain = ctx.createGain(); const peak = opts.gain ?? 0.12; const attack = opts.attack ?? 0.03; const release = opts.release ?? 0.28;
-  gain.gain.setValueAtTime(0.0001, startTime); gain.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), startTime + attack); gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration + release);
-  osc.connect(filter); filter.connect(gain);
-  if (ctx.createStereoPanner) { const panner = ctx.createStereoPanner(); panner.pan.value = opts.pan || 0; gain.connect(panner); panner.connect(destination); } else { gain.connect(destination); }
-  osc.start(startTime); osc.stop(startTime + duration + release + 0.05);
+  const osc = ctx.createOscillator();
+  osc.type = opts.waveform || "sine";
+  osc.frequency.setValueAtTime(freq, startTime);
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = opts.filter || "lowpass";
+  filter.frequency.setValueAtTime(opts.cutoff || 1800, startTime);
+  filter.Q.value = opts.q || 0.8;
+
+  const gain = ctx.createGain();
+  const peak = opts.gain ?? 0.12;
+  const attack = opts.attack ?? 0.03;
+  const release = opts.release ?? 0.28;
+
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), startTime + attack);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration + release);
+
+  osc.connect(filter);
+  filter.connect(gain);
+
+  if (ctx.createStereoPanner) {
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = opts.pan || 0;
+    gain.connect(panner);
+    panner.connect(destination);
+  } else {
+    gain.connect(destination);
+  }
+
+  osc.start(startTime);
+  osc.stop(startTime + duration + release + 0.05);
 }
-function playChord(ctx, destination, startTime, freqs, duration, opts = {}) { freqs.forEach((freq, index) => { const detune = opts.detuneStep ? (index - (freqs.length - 1) / 2) * opts.detuneStep : 0; playTone(ctx, destination, startTime + index * 0.015, freq, duration, { ...opts, detune }); }); }
-function stopMusic(updateButton = true) { musicPlaying = false; clearTimeout(musicLoopHandle); musicLoopHandle = null; if (musicContext && musicMasterGain) { try { musicMasterGain.gain.setTargetAtTime(0.0001, musicContext.currentTime, 0.02); } catch (_) {} } if (updateButton) { els.btnMusica.classList.remove("activo"); els.btnMusica.setAttribute("aria-pressed", "false"); } }
-function scheduleMusic(track) { clearTimeout(musicLoopHandle); const loop = () => { if (!musicPlaying || !musicContext || !musicMasterGain) return; const start = musicContext.currentTime + 0.05; track.perform(musicContext, musicMasterGain, start); musicLoopHandle = setTimeout(loop, track.loopMs); }; loop(); }
-async function startMusic(trackId) { await ensureMusicContext(); const track = getTrackById(trackId); if (!track) return; stopMusic(false); musicCurrentTrackId = track.id; localStorage.setItem("santuario_music_track", musicCurrentTrackId); renderMusicBoard(); musicPlaying = true; els.btnMusica.classList.add("activo"); els.btnMusica.setAttribute("aria-pressed", "true"); scheduleMusic(track); }
-async function toggleMusic() { const selectedId = musicCurrentTrackId || MUSIC_TRACKS[0].id; if (musicPlaying && selectedId === musicCurrentTrackId) { stopMusic(); return; } await startMusic(selectedId); }
-async function selectMusic(id) { musicCurrentTrackId = id; localStorage.setItem("santuario_music_track", musicCurrentTrackId); renderMusicBoard(); await startMusic(id); }
+
+function playChord(ctx, destination, startTime, freqs, duration, opts = {}) {
+  freqs.forEach((freq, index) => {
+    const detune = opts.detuneStep ? (index - (freqs.length - 1) / 2) * opts.detuneStep : 0;
+    playTone(ctx, destination, startTime + index * 0.015, freq, duration, { ...opts, detune });
+  });
+}
+
+function stopMusic(updateButton = true) {
+  musicPlaying = false;
+  clearTimeout(musicLoopHandle);
+  musicLoopHandle = null;
+
+  if (musicContext && musicMasterGain) {
+    try { musicMasterGain.gain.setTargetAtTime(0.0001, musicContext.currentTime, 0.02); } catch (_) {}
+  }
+
+  if (updateButton) {
+    els.btnMusica.classList.remove("activo");
+    els.btnMusica.setAttribute("aria-pressed", "false");
+  }
+}
+
+function scheduleMusic(track) {
+  clearTimeout(musicLoopHandle);
+  const loop = () => {
+    if (!musicPlaying || !musicContext || !musicMasterGain) return;
+    const start = musicContext.currentTime + 0.05;
+    track.perform(musicContext, musicMasterGain, start);
+    musicLoopHandle = setTimeout(loop, track.loopMs);
+  };
+  loop();
+}
+
+async function startMusic(trackId) {
+  await ensureMusicContext();
+  const track = getTrackById(trackId);
+  if (!track) return;
+
+  stopMusic(false);
+  musicCurrentTrackId = track.id;
+  localStorage.setItem("santuario_music_track", musicCurrentTrackId);
+  renderMusicBoard();
+
+  musicPlaying = true;
+  els.btnMusica.classList.add("activo");
+  els.btnMusica.setAttribute("aria-pressed", "true");
+  scheduleMusic(track);
+}
+
+async function toggleMusic() {
+  const selectedId = musicCurrentTrackId || MUSIC_TRACKS[0].id;
+  if (musicPlaying && selectedId === musicCurrentTrackId) {
+    stopMusic();
+    return;
+  }
+  await startMusic(selectedId);
+}
+
+async function selectMusic(id) {
+  musicCurrentTrackId = id;
+  localStorage.setItem("santuario_music_track", musicCurrentTrackId);
+  renderMusicBoard();
+  await startMusic(id);
+}
 
 // --- Voz ---
-function getVoice() { const voices = speechSynthesis.getVoices() || []; const selected = voices.find(v => v.voiceURI === els.voiceSelect.value); if (selected) return selected; return voices.find(v => /^es/i.test(v.lang)) || voices[0] || null; }
-async function playVoice() { let text = extractVisibleText(); if (!text || text.length < 40) { await wait(180); text = extractVisibleText(); } if (!text || text.length < 40) { alert("No hay suficiente texto visible para leer en voz alta."); return; } stopVoice(); const utterance = new SpeechSynthesisUtterance(text.slice(0, 4000)); const voice = getVoice(); if (voice) { utterance.voice = voice; utterance.lang = voice.lang || "es-AR"; } else { utterance.lang = "es-AR"; } utterance.rate = Number(els.voiceRateSelect.value || voiceRate || 0.96); utterance.pitch = 1.0; speechSynthesis.speak(utterance); }
-function stopVoice() { speechSynthesis.cancel(); }
+function getVoice() {
+  const voices = speechSynthesis.getVoices() || [];
+  const selected = voices.find(v => v.voiceURI === els.voiceSelect.value);
+  if (selected) return selected;
+  return voices.find(v => /^es/i.test(v.lang)) || voices[0] || null;
+}
+
+async function playVoice() {
+  let text = extractVisibleText();
+  if (!text || text.length < 40) {
+    await wait(180);
+    text = extractVisibleText();
+  }
+  if (!text || text.length < 40) {
+    alert("No hay suficiente texto visible para leer en voz alta.");
+    return;
+  }
+
+  stopVoice();
+  const utterance = new SpeechSynthesisUtterance(text.slice(0, 4000));
+  const voice = getVoice();
+  if (voice) {
+    utterance.voice = voice;
+    utterance.lang = voice.lang || "es-AR";
+  } else {
+    utterance.lang = "es-AR";
+  }
+  utterance.rate = Number(els.voiceRateSelect.value || voiceRate || 0.96);
+  utterance.pitch = 1.0;
+  speechSynthesis.speak(utterance);
+}
+
+function stopVoice() {
+  speechSynthesis.cancel();
+}
 
 // --- Reflexión ---
-async function summarizeText() { let text = extractVisibleText(); if (!text || text.length < 120) { await wait(180); text = extractVisibleText(); } if (!text || text.length < 120) { alert("Se necesita más texto visible para generar una reflexión."); return; } const sentences = segmentSentences(text); const keywords = topKeywords(text, 6); const first = shortenSentence(sentences[0] || ""); const middle = shortenSentence(sentences[Math.floor(sentences.length / 2)] || ""); const last = shortenSentence(sentences[sentences.length - 1] || ""); const themeLine = keywords.length ? `Las ideas que más se repiten son: ${keywords.join(", ")}.` : "La página deja una sensación de tensión, memoria y continuidad."; const openQuestion = keywords.length ? `¿Qué cambia si estas palabras se leen como una historia sobre ${keywords.slice(0, 2).join(" y ")} y no solo como información?` : "¿Qué cambia si este fragmento se lee como conflicto, como memoria o como advertencia, en lugar de verlo solo como información?"; const interpretation = buildInterpretation(first, middle, last, keywords); els.iaContent.innerHTML = `<h4>Núcleo</h4><p>${escapeHtml(themeLine)}</p><h4>Premisa</h4><p>${escapeHtml(first || "La apertura instala un tono de observación y expectativa.")}</p><h4>Clímax argumental</h4><p>${escapeHtml(middle || "El centro del pasaje empuja el sentido hacia una capa más profunda.")}</p><h4>Interpretación</h4><p>${escapeHtml(interpretation)}</p><h4>Pregunta para el lector</h4><p>${escapeHtml(openQuestion)}</p><h4>Eco final</h4><p>${escapeHtml(last || "El cierre deja una resonancia abierta y pide una segunda lectura.")}</p>`; els.iaModal.classList.remove("hidden"); }
-function segmentSentences(text) { const clean = String(text).replace(/\s+/g, " ").trim(); if (!clean) return []; if (window.Intl && Intl.Segmenter) { return Array.from(new Intl.Segmenter("es", { granularity: "sentence" }).segment(clean)).map(s => s.segment.trim()).filter(Boolean); } return clean.match(/[^.!?]+[.!?]+/g) || [clean]; }
-function topKeywords(text, limit = 5) { const words = String(text).toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).map(w => w.trim()).filter(w => w.length > 3 && !STOPWORDS.has(w)); const freq = new Map(); for (const w of words) { freq.set(w, (freq.get(w) || 0) + 1); } return [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([word]) => word); }
-function shortenSentence(sentence, max = 180) { const clean = String(sentence).replace(/\s+/g, " ").trim(); if (!clean) return ""; if (clean.length <= max) return clean; return clean.slice(0, max - 1).trimEnd() + "…"; }
-function buildInterpretation(first, middle, last, keywords) { const focus = keywords.length ? keywords.slice(0, 3).join(", ") : "la memoria, la duda y la forma"; const parts = []; parts.push(`La lectura se organiza alrededor de ${focus}.`); if (first) parts.push(`La apertura sugiere un punto de partida claro y estable.`); if (middle) parts.push(`En el centro aparece una tensión que conviene leer con pausa, porque desplaza el sentido literal hacia una capa más humana.`); if (last) parts.push(`El cierre no clausura por completo: deja una vibración que invita a seguir interpretando.`); parts.push(`Como acompañante de lectura, la página pide observar no solo lo que dice, sino también lo que omite, repite o insinúa.`); return parts.join(" "); }
+async function summarizeText() {
+  let text = extractVisibleText();
+  if (!text || text.length < 120) {
+    await wait(180);
+    text = extractVisibleText();
+  }
+  if (!text || text.length < 120) {
+    alert("Se necesita más texto visible para generar una reflexión.");
+    return;
+  }
 
-speechSynthesis.onvoiceschanged = populateVoices; setTimeout(populateVoices, 400);
+  const sentences = segmentSentences(text);
+  const keywords = topKeywords(text, 6);
+  const first = shortenSentence(sentences[0] || "");
+  const middle = shortenSentence(sentences[Math.floor(sentences.length / 2)] || "");
+  const last = shortenSentence(sentences[sentences.length - 1] || "");
+
+  const themeLine = keywords.length
+    ? `Las ideas que más se repiten son: ${keywords.join(", ")}.`
+    : "La página deja una sensación de tensión, memoria y continuidad.";
+
+  const openQuestion = keywords.length
+    ? `¿Qué cambia si estas palabras se leen como una historia sobre ${keywords.slice(0, 2).join(" y ")} y no solo como información?`
+    : "¿Qué cambia si este fragmento se lee como conflicto, como memoria o como advertencia, en lugar de verlo solo como información?";
+
+  const interpretation = buildInterpretation(first, middle, last, keywords);
+
+  els.iaContent.innerHTML = `
+    <h4>Núcleo</h4>
+    <p>${escapeHtml(themeLine)}</p>
+    <h4>Premisa</h4>
+    <p>${escapeHtml(first || "La apertura instala un tono de observación y expectativa.")}</p>
+    <h4>Clímax argumental</h4>
+    <p>${escapeHtml(middle || "El centro del pasaje empuja el sentido hacia una capa más profunda.")}</p>
+    <h4>Interpretación</h4>
+    <p>${escapeHtml(interpretation)}</p>
+    <h4>Pregunta para el lector</h4>
+    <p>${escapeHtml(openQuestion)}</p>
+    <h4>Eco final</h4>
+    <p>${escapeHtml(last || "El cierre deja una resonancia abierta y pide una segunda lectura.")}</p>
+  `;
+  els.iaModal.classList.remove("hidden");
+}
+
+function segmentSentences(text) {
+  const clean = String(text).replace(/\s+/g, " ").trim();
+  if (!clean) return [];
+  if (window.Intl && Intl.Segmenter) {
+    return Array.from(new Intl.Segmenter("es", { granularity: "sentence" }).segment(clean))
+      .map(s => s.segment.trim())
+      .filter(Boolean);
+  }
+  return clean.match(/[^.!?]+[.!?]+/g) || [clean];
+}
+
+function topKeywords(text, limit = 5) {
+  const words = String(text)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .map(w => w.trim())
+    .filter(w => w.length > 3 && !STOPWORDS.has(w));
+
+  const freq = new Map();
+  for (const w of words) {
+    freq.set(w, (freq.get(w) || 0) + 1);
+  }
+
+  return [...freq.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([word]) => word);
+}
+
+function shortenSentence(sentence, max = 180) {
+  const clean = String(sentence).replace(/\s+/g, " ").trim();
+  if (!clean) return "";
+  if (clean.length <= max) return clean;
+  return clean.slice(0, max - 1).trimEnd() + "…";
+}
+
+function buildInterpretation(first, middle, last, keywords) {
+  const focus = keywords.length ? keywords.slice(0, 3).join(", ") : "la memoria, la duda y la forma";
+  const parts = [];
+  parts.push(`La lectura se organiza alrededor de ${focus}.`);
+  if (first) parts.push(`La apertura sugiere un punto de partida claro y estable.`);
+  if (middle) parts.push(`En el centro aparece una tensión que conviene leer con pausa, porque desplaza el sentido literal hacia una capa más humana.`);
+  if (last) parts.push(`El cierre no clausura por completo: deja una vibración que invita a seguir interpretando.`);
+  parts.push(`Como acompañante de lectura, la página pide observar no solo lo que dice, sino también lo que omite, repite o insinúa.`);
+  return parts.join(" ");
+}
+
+speechSynthesis.onvoiceschanged = populateVoices;
+setTimeout(populateVoices, 400);
 init().then(setInitialSelectors);
