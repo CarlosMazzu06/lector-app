@@ -26,30 +26,41 @@
     <div id="loaderSubtext" class="loader-subtext"></div>
   </div>
 
+  <!-- ====== PANTALLA INICIO ====== -->
   <div id="homeScreen" class="pantalla activa">
     <div class="tarjeta-ejecutiva">
       <header class="hero">
         <div class="logo-mark">✑</div>
         <h1>Santuario Literario</h1>
-        <p class="bajada">Lectura inmersiva, música y reflexión</p>
+        <p class="bajada">Lectura inmersiva, música y análisis</p>
       </header>
 
       <div class="divider">⚜</div>
 
-      <h2 class="section-title">Obras del repositorio</h2>
-      <p class="section-desc">Sincronización con la carpeta book</p>
-      <div id="bookGrid" class="book-grid"></div>
+      <h2 class="section-title">Biblioteca del repositorio</h2>
+      <p class="section-desc">Lectura automática de la carpeta /book</p>
+      <div id="bookGrid" class="book-grid">
+        <p class="grid-msg">Sincronizando con el archivo principal…</p>
+      </div>
 
       <div class="divider">⚜</div>
 
       <h2 class="section-title">Cargar obra local</h2>
+      <p class="section-desc">Sube cualquier PDF o EPUB desde tu dispositivo</p>
       <label class="btn-pluma">
         <span>✍</span> Seleccionar PDF o EPUB
         <input type="file" id="fileInput" accept=".pdf,.epub" hidden />
       </label>
+
+      <div id="continueWrap" class="continue-wrap hidden">
+        <div class="divider">⚜</div>
+        <h2 class="section-title">Continuar lectura</h2>
+        <div id="continueGrid" class="continue-grid"></div>
+      </div>
     </div>
   </div>
 
+  <!-- ====== PANTALLA LECTOR ====== -->
   <div id="readerScreen" class="pantalla oculta">
     <nav class="top-nav">
       <button class="nav-btn nav-btn-big" onclick="goHome()" title="Volver al inicio" aria-label="Volver">✕</button>
@@ -61,6 +72,17 @@
       <div id="reader"></div>
     </div>
 
+    <!-- UBICADOR DE LECTURA -->
+    <div id="progressBarWrap" class="progress-wrap" aria-label="Ubicador de lectura">
+      <div class="progress-head">
+        <span id="readingClock" title="Tiempo en esta sesión">⏱ 00:00</span>
+        <span id="progressLabel">0%</span>
+        <button id="bookmarkBtn" class="bookmark-btn" onclick="toggleBookmark()" title="Marcar / Quitar señalador" aria-label="Marcador">🕮</button>
+      </div>
+      <input id="progressBar" class="progress-bar" type="range" min="0" max="100" value="0" aria-label="Progreso de lectura" />
+      <div id="bookmarkInfo" class="bookmark-info"></div>
+    </div>
+
     <div class="dock" role="toolbar" aria-label="Controles de lectura">
       <button onclick="prevPage()" title="Página anterior" aria-label="Anterior">←</button>
       <button onclick="nextPage()" title="Página siguiente" aria-label="Siguiente">→</button>
@@ -69,10 +91,11 @@
       <button onclick="playVoice()" title="Leer en voz alta" aria-label="Leer">▶</button>
       <button onclick="stopVoice()" title="Detener voz" aria-label="Silencio">■</button>
       <span class="dock-divider"></span>
-      <button class="accent-ia" onclick="summarizeText()" title="Reflexión literaria" aria-label="Reflexión">✧</button>
+      <button class="accent-ia" onclick="analyzeText()" title="Análisis racional de ideas" aria-label="Análisis">✧</button>
     </div>
   </div>
 
+  <!-- ====== MODAL DE AJUSTES ====== -->
   <div id="settingsModal" class="modal hidden" aria-hidden="true">
     <div class="modal-content">
       <div class="modal-header">
@@ -96,32 +119,34 @@
       <div class="setting-group">
         <label>Velocidad de voz</label>
         <select id="voiceRateSelect" class="select-field">
-          <option value="0.88">Lenta</option>
-          <option value="0.96" selected>Normal</option>
-          <option value="1.04">Ágil</option>
+          <option value="0.85">Lenta</option>
+          <option value="0.95" selected>Normal</option>
+          <option value="1.10">Ágil</option>
+          <option value="1.25">Rápida</option>
         </select>
       </div>
 
       <div class="setting-group">
         <label>Música ambiental</label>
         <div id="musicBoard" class="music-board"></div>
-        <div id="musicNow" class="music-now">Seleccioná una pieza para iniciar la música.</div>
+        <div id="musicNow" class="music-now">Toca una pieza para iniciarla.</div>
       </div>
 
       <div class="setting-group">
         <label>Volumen musical</label>
-        <input id="musicVolume" class="range-field" type="range" min="0.6" max="1.5" step="0.05" value="1.15">
+        <input id="musicVolume" class="range-field" type="range" min="0.2" max="2.0" step="0.05" value="1.15">
       </div>
 
-      <button class="primary-btn" onclick="toggleSettings()">Cerrar</button>
+      <button class="primary-btn" onclick="toggleSettings()">Cerrar ajustes</button>
     </div>
   </div>
 
+  <!-- ====== MODAL ANÁLISIS DE IDEAS ====== -->
   <div id="iaModal" class="modal hidden" aria-hidden="true">
     <div class="modal-content ia-panel">
       <div class="modal-header">
-        <h3 class="modal-title accent">✧ Reflexión de lectura</h3>
-        <button class="modal-close dark" onclick="closeIaModal()" aria-label="Cerrar reflexión">✕</button>
+        <h3 class="modal-title accent">✧ Análisis racional de lectura</h3>
+        <button class="modal-close dark" onclick="closeIaModal()" aria-label="Cerrar análisis">✕</button>
       </div>
       <div id="iaContent" class="ia-text"></div>
       <button class="primary-btn" onclick="closeIaModal()">Continuar leyendo</button>
