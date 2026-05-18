@@ -1,7 +1,15 @@
 /* ============================================================
    SANTUARIO LITERARIO — STYLE.CSS
+   Versión Unificada Definitiva 3.0
    Estilo "Roble y Pergamino" refinado
-   Versión: Unificada Definitiva 2.0
+   ------------------------------------------------------------
+   Correcciones consolidadas:
+   - Sin doble barra: progress-wrap solo aparece cuando el
+     usuario toca el botón 📖 en el top-nav.
+   - Top-nav translúcida con gradiente: nunca pisa el texto.
+   - Loader siempre con botón "Detener y volver".
+   - Modales con max-height + scroll interno.
+   - Tipografías y espaciados refinados para lectura larga.
    ============================================================ */
 
 * {
@@ -20,16 +28,12 @@
   --oro-brillante: #E8C37A;
   --tinta: #2C1810;
   --border: rgba(197, 160, 89, 0.22);
-  --border-strong: rgba(197, 160, 89, 0.40);
-  --text: #F9FAFB;
-  --muted: #A49F96;
+  --border-strong: rgba(197, 160, 89, 0.42);
   --shadow-soft: 0 8px 18px rgba(0,0,0,0.18);
   --shadow-deep: 0 20px 40px rgba(0,0,0,0.55);
 }
 
-html, body {
-  height: 100%;
-}
+html, body { height: 100%; }
 
 body {
   font-family: 'Cormorant Garamond', Georgia, serif;
@@ -44,14 +48,14 @@ body {
   inset: 0;
   z-index: -2;
   background: url('https://images.unsplash.com/photo-1532012197267-da84d127e765?q=80&w=2000&auto=format&fit=crop') center/cover;
-  filter: sepia(40%) brightness(0.25) contrast(1.1);
+  filter: sepia(35%) brightness(0.25) contrast(1.05);
 }
 .glass-overlay {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: radial-gradient(circle at 50% 0%, rgba(43,15,10,0.4) 0%, rgba(10,4,2,0.92) 100%);
-  backdrop-filter: blur(6px);
+  background: radial-gradient(circle at 50% 0%, rgba(43,15,10,0.36) 0%, rgba(10,4,2,0.92) 100%);
+  backdrop-filter: blur(7px);
 }
 
 /* ===== PANTALLAS ===== */
@@ -61,11 +65,12 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
   overflow-y: auto;
 }
 .activa {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
   z-index: 10;
 }
@@ -75,20 +80,16 @@ body {
   align-items: center;
   padding: 20px;
 }
-#readerScreen.activa {
-  display: block;
-}
+#readerScreen.activa { display: block; }
 .oculta {
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   z-index: -10;
-  display: block;
 }
-.hidden {
-  display: none !important;
-}
+.hidden { display: none !important; }
 
-/* ===== TARJETA EJECUTIVA (HOME) ===== */
+/* ===== TARJETA DEL HOME ===== */
 .tarjeta-ejecutiva {
   width: min(860px, 95vw);
   background: linear-gradient(145deg, rgba(43,15,10,0.95), rgba(20,4,2,0.98));
@@ -100,10 +101,7 @@ body {
   overflow-y: auto;
 }
 
-.hero {
-  text-align: center;
-  margin-bottom: 14px;
-}
+.hero { text-align: center; margin-bottom: 14px; }
 .logo-mark {
   font-size: 48px;
   color: var(--oro);
@@ -220,7 +218,7 @@ body {
   border-radius: 999px;
 }
 
-/* ===== SECCIÓN CONTINUAR LECTURA ===== */
+/* ===== CONTINUAR LECTURA ===== */
 .continue-wrap.hidden { display: none; }
 .continue-grid {
   display: grid;
@@ -260,7 +258,7 @@ body {
   letter-spacing: 0.8px;
 }
 
-/* ===== BOTÓN PRINCIPAL "PLUMA" ===== */
+/* ===== BOTÓN PLUMA ===== */
 .btn-pluma {
   display: flex;
   align-items: center;
@@ -280,7 +278,7 @@ body {
 }
 .btn-pluma:active { transform: scale(0.97); }
 
-/* ===== TOP NAV LECTOR ===== */
+/* ===== TOP NAV — TRANSLÚCIDA (sin pisar texto) ===== */
 .top-nav {
   position: fixed;
   top: 0;
@@ -292,17 +290,26 @@ body {
   align-items: center;
   gap: 12px;
   padding: 14px 18px;
-  background: linear-gradient(to bottom, rgba(10,4,2,0.95), transparent);
+  background: linear-gradient(to bottom, rgba(10,4,2,0.92), rgba(10,4,2,0));
+  pointer-events: none;
+}
+.top-nav > * { pointer-events: auto; }
+.nav-right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 .title-obra {
   font-family: 'Cinzel', serif;
   font-size: 13px;
   color: var(--oro);
-  max-width: 52vw;
+  max-width: 38vw;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   letter-spacing: 1px;
+  text-align: center;
+  flex: 1;
 }
 .nav-btn {
   background: transparent;
@@ -311,12 +318,12 @@ body {
   cursor: pointer;
 }
 .nav-btn-big {
-  width: 54px;
-  height: 54px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   border: 1px solid rgba(197,160,89,0.26);
   background: rgba(244,236,216,0.06);
-  font-size: 24px;
+  font-size: 22px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -328,14 +335,14 @@ body {
   border-color: var(--border-strong);
 }
 
-/* ===== CONTENEDOR DEL LECTOR ===== */
+/* ===== CONTENEDOR LECTOR ===== */
 #readerContainer {
   width: 100%;
   height: 100vh;
   overflow-y: auto;
   background: var(--pergamino);
   color: var(--tinta);
-  padding: 72px 0 200px;
+  padding: 72px 0 130px;
   box-shadow: inset 0 0 80px rgba(43,15,10,0.12);
 }
 #reader {
@@ -345,6 +352,7 @@ body {
   line-height: 1.75;
   padding: 18px 0;
   text-align: justify;
+  font-family: 'Cormorant Garamond', Georgia, serif;
 }
 #reader p { margin-bottom: 1.2em; }
 #reader canvas {
@@ -361,20 +369,27 @@ body {
   border: 0 !important;
 }
 
-/* ===== UBICADOR DE LECTURA (PROGRESS / BOOKMARK) ===== */
+/* ===== UBICADOR DE LECTURA — RETRÁCTIL ===== */
 .progress-wrap {
   position: fixed;
   left: 50%;
-  transform: translateX(-50%);
-  bottom: 82px;
+  bottom: 90px;
   z-index: 9998;
   width: min(860px, 94vw);
-  background: rgba(43,15,10,0.92);
+  background: rgba(43,15,10,0.94);
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 12px 16px;
   box-shadow: 0 15px 35px rgba(0,0,0,0.45);
   backdrop-filter: blur(10px);
+  transform: translateX(-50%) translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.progress-wrap.hidden {
+  display: block !important;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(20px);
 }
 .progress-head {
   display: flex;
@@ -471,10 +486,7 @@ body {
   background: var(--oro);
   box-shadow: 0 0 18px rgba(232,195,122,0.5);
 }
-.accent-ia {
-  color: #D8B4D8;
-  font-size: 20px;
-}
+.accent-ia { color: #D8B4D8; font-size: 20px; }
 
 /* ===== MODALES ===== */
 .modal {
@@ -537,7 +549,7 @@ body {
   border-color: rgba(197,160,89,0.4);
 }
 
-/* ===== SETTINGS GROUPS ===== */
+/* ===== SETTING GROUPS ===== */
 .setting-group { margin-bottom: 18px; }
 .setting-group label {
   display: block;
@@ -547,11 +559,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 1px;
 }
-.zoom-controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
+.zoom-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .zoom-controls button,
 .primary-btn {
   background: rgba(255,255,255,0.05);
@@ -566,15 +574,15 @@ body {
   transition: background 0.2s ease;
 }
 .zoom-controls button:hover,
-.primary-btn:hover {
-  background: rgba(255,255,255,0.10);
-}
-.ia-panel .primary-btn {
+.primary-btn:hover { background: rgba(255,255,255,0.10); }
+
+.primary-btn-ia {
   background: linear-gradient(180deg, var(--oro-brillante), var(--oro));
   color: var(--roble-oscuro);
   border-color: var(--oro);
   font-weight: 700;
 }
+
 .select-field,
 .range-field {
   width: 100%;
@@ -650,7 +658,7 @@ body {
   border: 1px solid var(--border);
 }
 
-/* ===== PANEL DE IDEAS (Análisis) ===== */
+/* ===== PANEL DE ANÁLISIS RACIONAL ===== */
 .ia-text {
   font-size: 16px;
   line-height: 1.65;
@@ -661,8 +669,8 @@ body {
   color: var(--roble);
   margin: 18px 0 8px;
   font-family: 'Cinzel', serif;
-  font-size: 15px;
-  letter-spacing: 1px;
+  font-size: 14px;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
   border-bottom: 1px solid rgba(43,15,10,0.18);
   padding-bottom: 4px;
@@ -681,6 +689,7 @@ body {
   position: relative;
   padding: 6px 0 6px 22px;
   border-bottom: 1px dashed rgba(43,15,10,0.10);
+  color: var(--tinta);
 }
 .ia-text ul li:last-child { border-bottom: none; }
 .ia-text ul li::before {
@@ -709,7 +718,7 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* ===== LOADER ===== */
+/* ===== LOADER CON BOTÓN CANCELAR ===== */
 .loader {
   position: fixed;
   inset: 0;
@@ -719,6 +728,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 8px;
 }
 .spinner {
   width: 40px;
@@ -727,14 +737,13 @@ body {
   border: 2px solid rgba(255,255,255,0.10);
   border-top-color: var(--oro);
   animation: spin 1s linear infinite;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loader-text {
   font-family: 'Cinzel', serif;
   font-size: 18px;
   color: var(--oro-brillante);
-  margin-bottom: 8px;
 }
 .loader-subtext {
   color: var(--pergamino-oscuro);
@@ -742,6 +751,22 @@ body {
   font-size: 14px;
   text-align: center;
   max-width: 90vw;
+  margin-bottom: 22px;
+}
+.loader-cancel {
+  background: rgba(197,160,89,0.10);
+  color: var(--oro-brillante);
+  border: 1px solid var(--border-strong);
+  padding: 12px 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+  transition: background 0.2s ease;
+}
+.loader-cancel:hover {
+  background: rgba(197,160,89,0.20);
 }
 
 /* ===== RESPONSIVE ===== */
@@ -751,8 +776,9 @@ body {
   .dock button { width: 42px; height: 42px; font-size: 17px; }
   #reader { font-size: 20px; width: 92vw; }
   .book-grid { grid-template-columns: 1fr; max-height: 32vh; }
-  .nav-btn-big { width: 50px; height: 50px; font-size: 22px; }
+  .nav-btn-big { width: 46px; height: 46px; font-size: 20px; }
   .music-board { grid-template-columns: 1fr; }
-  .progress-wrap { bottom: 76px; padding: 10px 12px; }
+  .progress-wrap { bottom: 84px; padding: 10px 12px; }
   .progress-head { font-size: 11px; }
+  .top-nav { padding: 10px 14px; }
 }
