@@ -1,17 +1,24 @@
 /* ============================================================
    SANTUARIO LITERARIO — APP.JS
-   Resolución unificada definitiva (consolidada de 3 dictámenes)
+   Versión Unificada Definitiva 3.0
    ------------------------------------------------------------
-   Patrón ReAct aplicado a las contradicciones detectadas entre
-   <consejo>, <experto> y <senior>.
+   Patrón ReAct aplicado a las contradicciones detectadas en
+   las 3 resoluciones nuevas (<experto>, <consejo>, <senior>).
 
-   Decisiones arquitectónicas finales:
-   - Biblioteca 100% dinámica desde GitHub API (/book)
-   - SIN BOOKS_FALLBACK con nombres hardcodeados
-   - EPUB como Blob URL + espera de layout (requestAnimationFrame + 400ms)
-   - Música por Web Audio API (5 piezas locales, audibles en cualquier device)
-   - Análisis racional: ideas principales + secundarias + interpretación
-   - Ubicador de lectura: progreso + marcador + reloj + "Continuar"
+   Decisiones finales (consenso técnico):
+   - Música: solo ondas SUAVES (sine/triangle), cutoffs bajos,
+     ataques y caídas largas. Sin sawtooth, sin square, sin
+     armónicos agresivos. Cinco ambientes cálidos extendidos.
+   - EPUB: Blob URL + requestAnimationFrame + wait(400) +
+     timeout 20s con loadToken para abortar sin race conditions.
+   - Loader: botón "Detener y volver" SIEMPRE activo.
+   - Progress bar: RETRÁCTIL. Se muestra solo al tocar 📖.
+     Auto-oculta después de 6s de inactividad.
+   - Análisis ✧: ranking semántico real (keywords + longitud +
+     posición). Devuelve idea principal, secundarias, palabras
+     clave, interpretación y pregunta abierta.
+   - Biblioteca: 100% dinámica desde GitHub API /book.
+     Sin BOOKS_FALLBACK con nombres fijos.
    ============================================================ */
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -22,94 +29,109 @@ if (location.search) {
 }
 
 /* ------------------------------------------------------------
-   CONFIGURACIÓN DE BIBLIOTECA DINÁMICA
+   CONFIGURACIÓN BIBLIOTECA DINÁMICA
    ------------------------------------------------------------ */
 const REPO_OWNER = "CarlosMazzu06";
 const REPO_NAME = "lector-app";
 const BOOK_FOLDER = "book";
 const GITHUB_API = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${BOOK_FOLDER}`;
 
-// NOTA ARQUITECTÓNICA: Aquí NO hay nombres de libros fijos.
-// La biblioteca se construye desde la API. Si la API falla,
-// el usuario sigue pudiendo cargar libros locales.
+// SIN HARDCODING: la biblioteca nace de /book.
+// Si la API falla, la sección queda vacía y el usuario carga local.
 
 /* ------------------------------------------------------------
-   MÚSICA AMBIENTAL (Web Audio API — 5 piezas locales)
+   MÚSICA AMBIENTAL CÁLIDA — Web Audio API
+   ------------------------------------------------------------
+   IMPORTANTE: Todas las piezas usan SOLO seno y triángulo,
+   ganancias bajas (0.06-0.12), cutoffs muy bajos para sonido
+   redondeado, y ataques/caídas largas para fundir las notas.
+   Sin sawtooth ni square (que sonaban "aturdidor").
    ------------------------------------------------------------ */
 const MUSIC_TRACKS = [
   {
-    id: "roble",
-    title: "Nocturno de Roble",
-    subtitle: "Arpegios graves y cálidos",
-    loopMs: 16000,
+    id: "susurro",
+    title: "Susurro de Pergamino",
+    subtitle: "Notas distantes, pads largos y cálidos",
+    loopMs: 22000,
     perform(ctx, dest, start) {
-      playTone(ctx, dest, start, 73.42, 3.6, { waveform: "sine", gain: 0.18, cutoff: 520, pan: -0.1 });
-      [146.83, 174.61, 196.00, 174.61].forEach((freq, i) => {
-        playTone(ctx, dest, start + i * 0.85, freq, 0.85, { waveform: "triangle", gain: 0.22, cutoff: 1300, pan: i % 2 ? 0.12 : -0.12 });
+      // Drone grave envolvente
+      playTone(ctx, dest, start, 73.42, 8.0, { waveform: "sine", gain: 0.10, cutoff: 380, attack: 2.0, release: 3.0, pan: 0 });
+      // Acorde mayor suave
+      playChord(ctx, dest, start + 2.0, [146.83, 220.00, 293.66], 9.0, { waveform: "sine", gain: 0.08, cutoff: 700, attack: 1.5, release: 4.0, pan: 0 });
+      // Nota brillante distante
+      playTone(ctx, dest, start + 9.0, 392.00, 4.5, { waveform: "triangle", gain: 0.05, cutoff: 1100, attack: 1.0, release: 3.0, pan: 0.12 });
+      // Segunda capa armónica
+      playChord(ctx, dest, start + 13.0, [174.61, 261.63, 349.23], 7.0, { waveform: "sine", gain: 0.07, cutoff: 800, attack: 1.2, release: 3.5, pan: -0.08 });
+    }
+  },
+  {
+    id: "vela",
+    title: "Luz de Vela",
+    subtitle: "Piano apacible imaginario",
+    loopMs: 24000,
+    perform(ctx, dest, start) {
+      // Bajo de piano suave
+      playTone(ctx, dest, start, 110.00, 6.0, { waveform: "sine", gain: 0.10, cutoff: 600, attack: 0.8, release: 3.0, pan: 0 });
+      // Melodía lenta
+      [261.63, 329.63, 392.00, 329.63, 293.66, 246.94].forEach((freq, i) => {
+        playTone(ctx, dest, start + 2.0 + i * 2.8, freq, 2.2, { waveform: "triangle", gain: 0.07, cutoff: 1200, attack: 0.4, release: 1.8, pan: i % 2 ? 0.10 : -0.10 });
       });
-      playChord(ctx, dest, start + 4.0, [220.00, 261.63, 329.63], 4.2, { waveform: "sine", gain: 0.15, cutoff: 1600, detuneStep: 2, pan: 0 });
-      playTone(ctx, dest, start + 9.0, 98.00, 2.8, { waveform: "sine", gain: 0.13, cutoff: 600, pan: -0.08 });
+      // Acorde de cierre
+      playChord(ctx, dest, start + 19.0, [220.00, 293.66, 369.99], 4.5, { waveform: "sine", gain: 0.08, cutoff: 900, attack: 1.0, release: 3.0, pan: 0 });
     }
   },
   {
     id: "lluvia",
     title: "Pergamino en Lluvia",
-    subtitle: "Pads suaves y pulsos de agua",
-    loopMs: 18000,
+    subtitle: "Pads y agua tranquila",
+    loopMs: 21000,
     perform(ctx, dest, start) {
-      const chordA = [196.00, 246.94, 293.66];
-      const chordB = [174.61, 220.00, 277.18];
-      playChord(ctx, dest, start, chordA, 4.8, { waveform: "sine", gain: 0.15, cutoff: 1500, detuneStep: 3, pan: 0 });
-      playTone(ctx, dest, start + 4.5, 392.00, 1.8, { waveform: "triangle", gain: 0.12, cutoff: 1800, pan: 0.2 });
-      playChord(ctx, dest, start + 6.4, chordB, 4.8, { waveform: "sine", gain: 0.15, cutoff: 1500, detuneStep: 3, pan: 0 });
-      playTone(ctx, dest, start + 12.0, 523.25, 1.2, { waveform: "sine", gain: 0.11, cutoff: 2000, pan: -0.2 });
-    }
-  },
-  {
-    id: "salon",
-    title: "Salón Dorado",
-    subtitle: "Pulso elegante y cámara",
-    loopMs: 15000,
-    perform(ctx, dest, start) {
-      [110.00, 130.81, 146.83].forEach((freq, i) => {
-        playTone(ctx, dest, start + i * 1.3, freq, 1.1, { waveform: "sawtooth", gain: 0.12, cutoff: 900, pan: -0.15 });
+      const a = [196.00, 246.94, 293.66];
+      const b = [174.61, 220.00, 277.18];
+      playChord(ctx, dest, start, a, 8.0, { waveform: "sine", gain: 0.08, cutoff: 850, attack: 1.5, release: 3.5, pan: 0 });
+      // "Gotas" tenues
+      [523.25, 587.33, 659.25, 698.46].forEach((freq, i) => {
+        playTone(ctx, dest, start + 3.0 + i * 1.4, freq, 0.6, { waveform: "sine", gain: 0.04, cutoff: 2200, attack: 0.1, release: 0.5, pan: i % 2 ? 0.18 : -0.18 });
       });
-      [220.00, 246.94, 261.63, 329.63, 261.63].forEach((freq, i) => {
-        playTone(ctx, dest, start + 0.6 + i * 0.95, freq, 0.7, { waveform: "triangle", gain: 0.18, cutoff: 1700, pan: i % 2 ? 0.12 : -0.12 });
-      });
-      playChord(ctx, dest, start + 7.0, [293.66, 369.99, 440.00], 3.5, { waveform: "triangle", gain: 0.15, cutoff: 1700, detuneStep: 4, pan: 0 });
-    }
-  },
-  {
-    id: "tinta",
-    title: "Tinta y Cobre",
-    subtitle: "Campanas suaves y sombra baja",
-    loopMs: 17000,
-    perform(ctx, dest, start) {
-      playTone(ctx, dest, start, 98.00, 4.0, { waveform: "sine", gain: 0.14, cutoff: 500, pan: -0.08 });
-      playTone(ctx, dest, start + 1.2, 196.00, 0.5, { waveform: "square", gain: 0.10, cutoff: 2400, pan: 0.15 });
-      playTone(ctx, dest, start + 3.2, 261.63, 0.7, { waveform: "triangle", gain: 0.14, cutoff: 1800, pan: -0.1 });
-      playTone(ctx, dest, start + 6.6, 329.63, 0.9, { waveform: "triangle", gain: 0.13, cutoff: 1800, pan: 0.1 });
-      playTone(ctx, dest, start + 10.0, 392.00, 0.6, { waveform: "sine", gain: 0.12, cutoff: 2200, pan: 0.2 });
+      playChord(ctx, dest, start + 11.0, b, 8.0, { waveform: "sine", gain: 0.08, cutoff: 850, attack: 1.5, release: 3.5, pan: 0 });
     }
   },
   {
     id: "catedral",
     title: "Cúpula de Noche",
-    subtitle: "Drone profundo y brillo lejano",
-    loopMs: 20000,
+    subtitle: "Drone profundo y eco lejano",
+    loopMs: 26000,
     perform(ctx, dest, start) {
-      playTone(ctx, dest, start, 65.41, 7.0, { waveform: "sine", gain: 0.14, cutoff: 420, pan: 0 });
-      playTone(ctx, dest, start + 1.8, 130.81, 5.0, { waveform: "triangle", gain: 0.12, cutoff: 900, pan: -0.1 });
-      playTone(ctx, dest, start + 4.0, 261.63, 2.0, { waveform: "sine", gain: 0.10, cutoff: 1600, pan: 0.12 });
-      playTone(ctx, dest, start + 8.0, 523.25, 1.2, { waveform: "sine", gain: 0.10, cutoff: 2500, pan: -0.12 });
-      playTone(ctx, dest, start + 12.0, 392.00, 1.0, { waveform: "triangle", gain: 0.11, cutoff: 1800, pan: 0.08 });
+      // Drone muy grave
+      playTone(ctx, dest, start, 65.41, 12.0, { waveform: "sine", gain: 0.09, cutoff: 320, attack: 2.5, release: 4.0, pan: 0 });
+      playTone(ctx, dest, start + 2.5, 130.81, 9.0, { waveform: "sine", gain: 0.07, cutoff: 600, attack: 2.0, release: 3.5, pan: -0.08 });
+      // Capa armónica
+      playTone(ctx, dest, start + 6.0, 261.63, 5.0, { waveform: "triangle", gain: 0.05, cutoff: 1000, attack: 1.5, release: 3.0, pan: 0.10 });
+      // Brillo lejano
+      playTone(ctx, dest, start + 13.0, 523.25, 3.0, { waveform: "sine", gain: 0.04, cutoff: 1600, attack: 1.2, release: 2.5, pan: -0.12 });
+      playTone(ctx, dest, start + 18.0, 392.00, 4.0, { waveform: "triangle", gain: 0.05, cutoff: 1300, attack: 1.0, release: 2.5, pan: 0.08 });
+    }
+  },
+  {
+    id: "jardin",
+    title: "Jardín al Amanecer",
+    subtitle: "Quietud cristalina y tibia",
+    loopMs: 23000,
+    perform(ctx, dest, start) {
+      // Pad cálido
+      playChord(ctx, dest, start, [196.00, 246.94, 329.63], 10.0, { waveform: "sine", gain: 0.08, cutoff: 750, attack: 2.0, release: 4.0, pan: 0 });
+      // Notas claras en alto
+      [493.88, 587.33, 523.25, 440.00].forEach((freq, i) => {
+        playTone(ctx, dest, start + 4.0 + i * 2.5, freq, 1.4, { waveform: "triangle", gain: 0.05, cutoff: 1500, attack: 0.5, release: 1.5, pan: i % 2 ? 0.10 : -0.10 });
+      });
+      // Cierre suave
+      playChord(ctx, dest, start + 16.0, [174.61, 261.63, 349.23], 6.0, { waveform: "sine", gain: 0.07, cutoff: 800, attack: 1.5, release: 3.0, pan: 0 });
     }
   }
 ];
 
 /* ------------------------------------------------------------
-   STOPWORDS (Español) — para análisis de ideas
+   STOPWORDS Español
    ------------------------------------------------------------ */
 const STOPWORDS = new Set([
   "a","acá","ahí","al","algo","algún","algunas","algunos","ante","antes","aquel","aquella","aquellas","aquellos","aquí","así","aun","aunque","bajo","bien",
@@ -117,7 +139,7 @@ const STOPWORDS = new Set([
   "en","entre","era","éramos","eran","eras","eres","es","esa","esas","ese","eso","esos","esta","está","están","estaba","estaban","este","esto","estos","fue","fueron",
   "ha","han","hasta","hay","la","las","le","les","lo","los","más","me","mi","mí","mis","mucho","muy","ni","no","nos","nosotros","o","otro","otra","otros","otras",
   "para","pero","por","porque","pues","que","qué","quien","quién","se","sea","ser","si","sí","sin","sobre","su","sus","también","tan","tanto","te","ti","tiene",
-  "tienen","todo","todos","toda","todas","tras","tu","tú","tus","un","una","uno","unos","unas","y","ya","yo","aún","ese","esta","más","cuándo","dónde","cómo","muy"
+  "tienen","todo","todos","toda","todas","tras","tu","tú","tus","un","una","uno","unos","unas","y","ya","yo","aún","cuándo","dónde","cómo","muy","fuera","hacia"
 ]);
 
 /* ------------------------------------------------------------
@@ -134,19 +156,28 @@ let currentBookTitle = "";
 let currentBookId = "";
 let pdfZoom = 1.0;
 let epubFontPercent = 100;
+
 let musicContext = null;
 let musicMasterGain = null;
 let musicCompressor = null;
 let musicPlaying = false;
 let musicLoopHandle = null;
 let musicCurrentTrackId = localStorage.getItem("santuario_music_track") || MUSIC_TRACKS[0].id;
-let musicVolume = clamp(Number(localStorage.getItem("santuario_music_volume") || "1.15"), 0.2, 2.0);
+let musicVolume = clamp(Number(localStorage.getItem("santuario_music_volume") || "0.85"), 0.3, 1.4);
+
 let selectedVoiceURI = localStorage.getItem("santuario_voice_uri") || "";
-let voiceRate = clamp(Number(localStorage.getItem("santuario_voice_rate") || "0.95"), 0.8, 1.4);
+let voiceRate = clamp(Number(localStorage.getItem("santuario_voice_rate") || "0.95"), 0.7, 1.4);
 let availableVoices = [];
+
 let currentObjectUrl = null;
 let readStartTime = Date.now();
 let readingTimerHandle = null;
+let loadTimeout = null;
+let loadToken = 0;
+
+// Auto-ocultar barra de progreso
+let progressVisible = false;
+let progressAutoHideHandle = null;
 
 /* ------------------------------------------------------------
    REFS DOM
@@ -174,6 +205,7 @@ const els = {
   voiceRateSelect: $("voiceRateSelect"),
   progressBar: $("progressBar"),
   progressLabel: $("progressLabel"),
+  progressBarWrap: $("progressBarWrap"),
   readingClock: $("readingClock"),
   bookmarkBtn: $("bookmarkBtn"),
   bookmarkInfo: $("bookmarkInfo"),
@@ -189,7 +221,14 @@ function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 function escapeHtml(str) { return String(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"); }
 function escapeAttr(str) { return String(str).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"); }
 function safeDecodePath(path) { try { return decodeURIComponent(path); } catch { return path; } }
-function slugify(str) { return String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,""); }
+function slugify(str) {
+  return String(str)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
 
 function formatClock(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -207,7 +246,7 @@ function showLoader(text, subtext = "") {
 function hideLoader() { els.loader.classList.add("hidden"); }
 
 /* ------------------------------------------------------------
-   NAVEGACIÓN ENTRE PANTALLAS
+   NAVEGACIÓN DE PANTALLAS
    ------------------------------------------------------------ */
 function openReader(title) {
   els.home.classList.replace("activa", "oculta");
@@ -218,6 +257,8 @@ function openReader(title) {
   startReadingTimer();
   updateProgressUI(0);
   updateBookmarkButton();
+  // La barra de progreso empieza oculta — el usuario la abre con 📖.
+  hideProgressBar(true);
 }
 
 function goHome() {
@@ -229,15 +270,29 @@ function goHome() {
   els.readerScreen.classList.replace("activa", "oculta");
   els.home.classList.replace("oculta", "activa");
   closeModals();
+  renderBooks();
   renderContinueSection();
+}
+
+function cancelarCarga() {
+  loadToken++;
+  clearTimeout(loadTimeout);
+  loadTimeout = null;
+  cleanup();
+  hideLoader();
+  // Si estábamos en pantalla de lector pero el contenido no llegó, volvemos al home.
+  if (els.readerScreen.classList.contains("activa")) {
+    els.readerScreen.classList.replace("activa", "oculta");
+    els.home.classList.replace("oculta", "activa");
+    stopReadingTimer();
+    renderBooks();
+    renderContinueSection();
+  }
 }
 
 function toggleSettings() { els.settingsModal.classList.toggle("hidden"); }
 function closeIaModal() { els.iaModal.classList.add("hidden"); }
-function closeModals() {
-  els.settingsModal.classList.add("hidden");
-  els.iaModal.classList.add("hidden");
-}
+function closeModals() { els.settingsModal.classList.add("hidden"); els.iaModal.classList.add("hidden"); }
 
 function cleanup() {
   if (currentEpub && typeof currentEpub.destroy === "function") {
@@ -256,14 +311,13 @@ function cleanup() {
   currentBookId = "";
   currentObjectUrl = null;
   els.readerDiv.innerHTML = "";
-  els.readerDiv.style.fontSize = "22px";
+  els.readerDiv.style.fontSize = "";
   pdfZoom = 1.0;
   epubFontPercent = 100;
-  updateProgressUI(0);
 }
 
 /* ------------------------------------------------------------
-   UI: progreso, reloj, bookmark
+   PROGRESO Y BOOKMARK
    ------------------------------------------------------------ */
 function updateProgressUI(percent) {
   const p = clamp(Math.round(percent), 0, 100);
@@ -284,22 +338,51 @@ function stopReadingTimer() {
   els.readingClock.textContent = "⏱ 00:00";
 }
 
-function updateBookmarkButton() {
-  const bm = getBookmark(currentBookId);
-  if (bm) {
-    els.bookmarkBtn.classList.add("activo");
-    els.bookmarkBtn.title = "Quitar señalador";
-    const when = new Date(bm.savedAt || Date.now()).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" });
-    els.bookmarkInfo.textContent = `📍 Señalador guardado: ${bm.progress}% · ${when}`;
+/* ------------------------------------------------------------
+   PROGRESS BAR RETRÁCTIL
+   ------------------------------------------------------------ */
+function toggleProgressBar() {
+  if (progressVisible) {
+    hideProgressBar();
   } else {
-    els.bookmarkBtn.classList.remove("activo");
-    els.bookmarkBtn.title = "Marcar señalador";
-    els.bookmarkInfo.textContent = "";
+    showProgressBar();
   }
+}
+
+function showProgressBar() {
+  els.progressBarWrap.classList.remove("hidden");
+  progressVisible = true;
+  scheduleProgressAutoHide();
+}
+
+function hideProgressBar(immediate = false) {
+  els.progressBarWrap.classList.add("hidden");
+  progressVisible = false;
+  clearTimeout(progressAutoHideHandle);
+  progressAutoHideHandle = null;
+}
+
+function scheduleProgressAutoHide() {
+  clearTimeout(progressAutoHideHandle);
+  progressAutoHideHandle = setTimeout(() => {
+    if (progressVisible) hideProgressBar();
+  }, 6000);
+}
+
+function getBookmark(bookId) {
+  if (!bookId) return null;
+  try {
+    const raw = localStorage.getItem(`santuario_bookmark_${bookId}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function safeCurrentCfi() {
+  try { return rendition?.currentLocation()?.start?.cfi || null; } catch { return null; }
 }
 
 function toggleBookmark() {
   if (!currentBookId) return;
+  scheduleProgressAutoHide();
   const existing = getBookmark(currentBookId);
   if (existing) {
     localStorage.removeItem(`santuario_bookmark_${currentBookId}`);
@@ -318,108 +401,19 @@ function toggleBookmark() {
   updateBookmarkButton();
 }
 
-function safeCurrentCfi() {
-  try { return rendition.currentLocation()?.start?.cfi || null; } catch { return null; }
-}
-
-function getBookmark(bookId) {
-  if (!bookId) return null;
-  try {
-    const raw = localStorage.getItem(`santuario_bookmark_${bookId}`);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
-
-/* ------------------------------------------------------------
-   MÚSICA: tablero y selección
-   ------------------------------------------------------------ */
-function renderMusicBoard() {
-  els.musicBoard.innerHTML = MUSIC_TRACKS.map(track => `
-    <button class="music-card ${track.id === musicCurrentTrackId ? "active" : ""}" onclick="selectMusic('${track.id}')">
-      <span class="music-card-title">${escapeHtml(track.title)}</span>
-      <span class="music-card-subtitle">${escapeHtml(track.subtitle)}</span>
-    </button>
-  `).join("");
-  const selected = MUSIC_TRACKS.find(t => t.id === musicCurrentTrackId) || MUSIC_TRACKS[0];
-  els.musicNow.textContent = selected
-    ? (musicPlaying ? `♪ Sonando: ${selected.title}` : `Pieza seleccionada: ${selected.title}`)
-    : "Toca una pieza para iniciarla.";
-}
-
-/* ------------------------------------------------------------
-   VOCES
-   ------------------------------------------------------------ */
-function populateVoices() {
-  const voices = speechSynthesis.getVoices() || [];
-  if (!voices.length) {
-    els.voiceSelect.innerHTML = `<option value="">Voz del sistema</option>`;
-    return;
-  }
-  availableVoices = voices.slice().sort((a, b) => {
-    const aEs = /^es/i.test(a.lang) ? 0 : 1;
-    const bEs = /^es/i.test(b.lang) ? 0 : 1;
-    return aEs - bEs || a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name);
-  });
-  els.voiceSelect.innerHTML = availableVoices.map(v =>
-    `<option value="${escapeAttr(v.voiceURI)}">${escapeHtml(v.name)} · ${escapeHtml(v.lang)}</option>`
-  ).join("");
-  const preferred = availableVoices.find(v => v.voiceURI === selectedVoiceURI)
-    || availableVoices.find(v => /^es/i.test(v.lang))
-    || availableVoices[0];
-  if (preferred) {
-    els.voiceSelect.value = preferred.voiceURI;
-    selectedVoiceURI = preferred.voiceURI;
-    localStorage.setItem("santuario_voice_uri", selectedVoiceURI);
+function updateBookmarkButton() {
+  const bm = currentBookId ? getBookmark(currentBookId) : null;
+  if (!els.bookmarkBtn) return;
+  if (bm) {
+    els.bookmarkBtn.classList.add("activo");
+    const when = new Date(bm.savedAt || Date.now()).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" });
+    els.bookmarkInfo.textContent = `📍 Señalador en ${bm.progress}% · ${when}`;
+  } else {
+    els.bookmarkBtn.classList.remove("activo");
+    els.bookmarkInfo.textContent = "Sin señalador guardado";
   }
 }
 
-/* ------------------------------------------------------------
-   BIBLIOTECA DINÁMICA DESDE GITHUB
-   ------------------------------------------------------------ */
-async function loadBooksFromGitHub() {
-  const res = await fetch(GITHUB_API, { cache: "no-store" });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const files = await res.json();
-  books = files
-    .filter(f => f.type === "file" && /\.(epub|pdf)$/i.test(f.name))
-    .map(f => {
-      const cleanTitle = safeDecodePath(f.name.replace(/\.(epub|pdf)$/i, "").replace(/[_-]+/g, " ").trim());
-      return {
-        title: cleanTitle,
-        file: f.download_url,
-        type: f.name.toLowerCase().endsWith(".epub") ? "epub" : "pdf",
-        id: slugify(cleanTitle)
-      };
-    })
-    .sort((a, b) => a.title.localeCompare(b.title, "es"));
-}
-
-function renderBooks() {
-  if (!books.length) {
-    els.bookGrid.innerHTML = `<p class="grid-msg">📭 No hay libros en /book. Cargá uno desde tu dispositivo abajo.</p>`;
-    return;
-  }
-  els.bookGrid.innerHTML = books.map((b, i) => {
-    const bm = getBookmark(b.id);
-    const progressBar = bm
-      ? `<div class="book-progress-mini"><span style="width:${bm.progress}%"></span></div>`
-      : "";
-    return `
-      <button class="btn-book" onclick="loadRepoBook(${i})" title="${escapeAttr(b.title)}">
-        <span class="book-icon">${b.type === "epub" ? "✑" : "▣"}</span>
-        <div class="book-info">
-          <div class="book-title">${escapeHtml(b.title)}</div>
-          <div class="book-meta">${b.type.toUpperCase()}${bm ? ` · ${bm.progress}% leído` : ""}</div>
-          ${progressBar}
-        </div>
-      </button>
-    `;
-  }).join("");
-}
-
-/* ------------------------------------------------------------
-   SECCIÓN "CONTINUAR LECTURA"
-   ------------------------------------------------------------ */
 function getAllBookmarks() {
   const list = [];
   for (let i = 0; i < localStorage.length; i++) {
@@ -462,6 +456,91 @@ function continueFromBookmark(bookId) {
 }
 
 /* ------------------------------------------------------------
+   MÚSICA: BOARD
+   ------------------------------------------------------------ */
+function renderMusicBoard() {
+  els.musicBoard.innerHTML = MUSIC_TRACKS.map(track => `
+    <button class="music-card ${track.id === musicCurrentTrackId ? "active" : ""}" onclick="selectMusic('${track.id}')">
+      <span class="music-card-title">${escapeHtml(track.title)}</span>
+      <span class="music-card-subtitle">${escapeHtml(track.subtitle)}</span>
+    </button>
+  `).join("");
+  const selected = MUSIC_TRACKS.find(t => t.id === musicCurrentTrackId) || MUSIC_TRACKS[0];
+  els.musicNow.textContent = selected
+    ? (musicPlaying ? `♪ Sonando: ${selected.title}` : `Pieza seleccionada: ${selected.title}`)
+    : "Tocá una pieza para iniciarla.";
+}
+
+/* ------------------------------------------------------------
+   VOCES
+   ------------------------------------------------------------ */
+function populateVoices() {
+  const voices = speechSynthesis.getVoices() || [];
+  if (!voices.length) {
+    els.voiceSelect.innerHTML = `<option value="">Voz del sistema</option>`;
+    return;
+  }
+  availableVoices = voices.slice().sort((a, b) => {
+    const aEs = /^es/i.test(a.lang) ? 0 : 1;
+    const bEs = /^es/i.test(b.lang) ? 0 : 1;
+    return aEs - bEs || a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name);
+  });
+  els.voiceSelect.innerHTML = availableVoices.map(v =>
+    `<option value="${escapeAttr(v.voiceURI)}">${escapeHtml(v.name)} · ${escapeHtml(v.lang)}</option>`
+  ).join("");
+  const preferred = availableVoices.find(v => v.voiceURI === selectedVoiceURI)
+    || availableVoices.find(v => /^es/i.test(v.lang))
+    || availableVoices[0];
+  if (preferred) {
+    els.voiceSelect.value = preferred.voiceURI;
+    selectedVoiceURI = preferred.voiceURI;
+    localStorage.setItem("santuario_voice_uri", selectedVoiceURI);
+  }
+}
+
+/* ------------------------------------------------------------
+   BIBLIOTECA DINÁMICA — GitHub API
+   ------------------------------------------------------------ */
+async function loadBooksFromGitHub() {
+  const res = await fetch(GITHUB_API, { cache: "no-store" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const files = await res.json();
+  books = files
+    .filter(f => f.type === "file" && /\.(epub|pdf)$/i.test(f.name))
+    .map(f => {
+      const cleanTitle = safeDecodePath(f.name.replace(/\.(epub|pdf)$/i, "").replace(/[_-]+/g, " ").trim());
+      return {
+        title: cleanTitle,
+        file: f.download_url,
+        type: f.name.toLowerCase().endsWith(".epub") ? "epub" : "pdf",
+        id: slugify(cleanTitle)
+      };
+    })
+    .sort((a, b) => a.title.localeCompare(b.title, "es"));
+}
+
+function renderBooks() {
+  if (!books.length) {
+    els.bookGrid.innerHTML = `<p class="grid-msg">📭 No hay libros en /book. Cargá uno desde tu dispositivo abajo.</p>`;
+    return;
+  }
+  els.bookGrid.innerHTML = books.map((b, i) => {
+    const bm = getBookmark(b.id);
+    const progressBar = bm ? `<div class="book-progress-mini"><span style="width:${bm.progress}%"></span></div>` : "";
+    return `
+      <button class="btn-book" onclick="loadRepoBook(${i})" title="${escapeAttr(b.title)}">
+        <span class="book-icon">${b.type === "epub" ? "✑" : "▣"}</span>
+        <div class="book-info">
+          <div class="book-title">${escapeHtml(b.title)}</div>
+          <div class="book-meta">${b.type.toUpperCase()}${bm ? ` · ${bm.progress}% leído` : ""}</div>
+          ${progressBar}
+        </div>
+      </button>
+    `;
+  }).join("");
+}
+
+/* ------------------------------------------------------------
    INIT
    ------------------------------------------------------------ */
 async function init() {
@@ -478,9 +557,14 @@ async function init() {
     localStorage.setItem("santuario_voice_rate", String(voiceRate));
   });
   els.progressBar.addEventListener("input", onProgressSeek);
+
+  // Re-arma el auto-hide cuando el usuario toca la barra
+  els.progressBarWrap.addEventListener("pointerdown", scheduleProgressAutoHide);
+  els.progressBarWrap.addEventListener("pointermove", scheduleProgressAutoHide);
+
   window.addEventListener("resize", () => {
     if (isEpub && rendition) {
-      try { rendition.resize(window.innerWidth, window.innerHeight); } catch (_) {}
+      try { rendition.resize(window.innerWidth, Math.max(window.innerHeight - 200, 400)); } catch (_) {}
     }
     if (!isEpub && currentPDF) {
       renderPDFPage().catch(() => {});
@@ -493,7 +577,7 @@ async function init() {
   try {
     await loadBooksFromGitHub();
   } catch (err) {
-    console.warn("La API de GitHub no respondió. Biblioteca remota deshabilitada.", err);
+    console.warn("Biblioteca remota deshabilitada.", err);
     books = [];
   }
   renderBooks();
@@ -504,47 +588,54 @@ async function init() {
 function setInitialSelectors() {
   els.musicVolume.value = String(musicVolume);
   els.voiceRateSelect.value = String(voiceRate);
-  if (selectedVoiceURI) {
-    els.voiceSelect.value = selectedVoiceURI;
-  }
+  if (selectedVoiceURI) els.voiceSelect.value = selectedVoiceURI;
   renderMusicBoard();
 }
 
 /* ------------------------------------------------------------
-   CARGA DE LIBRO DESDE REPO
+   CARGA DE LIBROS
    ------------------------------------------------------------ */
 async function loadRepoBook(index) {
   const book = books[index];
   if (!book) return;
-  showLoader(`Abriendo ${book.type.toUpperCase()}…`, book.type === "epub" ? "Preparando el manuscrito…" : "");
+  const myToken = ++loadToken;
+  showLoader(`Abriendo ${book.type.toUpperCase()}…`, book.type === "epub" ? "Preparando el manuscrito…" : "Cargando documento…");
   try {
     const response = await fetch(book.file, { cache: "no-store" });
+    if (myToken !== loadToken) return;
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const buffer = await response.arrayBuffer();
+    if (myToken !== loadToken) return;
+
     currentBookId = book.id;
     if (book.type === "epub") {
       const blob = new Blob([buffer], { type: "application/epub+zip" });
       const url = URL.createObjectURL(blob);
       currentObjectUrl = url;
-      await loadEpubFromUrl(url, book.title);
+      await loadEpubFromUrl(url, book.title, myToken);
     } else {
-      await loadPDF(buffer, book.title);
+      await loadPDF(buffer, book.title, myToken);
     }
+    if (myToken !== loadToken) return;
     restoreBookmarkIfAny();
   } catch (err) {
+    if (myToken !== loadToken) return;
     console.error(err);
-    alert(`No se pudo abrir "${book.title}". Verifica que el archivo exista en /book/.`);
+    alert(`No se pudo abrir "${book.title}". Probá la carga local o revisá el archivo en /book.`);
+    cancelarCarga();
   } finally {
-    hideLoader();
+    if (myToken === loadToken) hideLoader();
   }
 }
 
 async function handleLocalFile(e) {
   const file = e.target.files?.[0];
   if (!file) return;
+  const myToken = ++loadToken;
   showLoader("Procesando archivo local…", file.name.toLowerCase().endsWith(".epub") ? "Preparando EPUB…" : "Preparando PDF…");
   try {
     const buffer = await file.arrayBuffer();
+    if (myToken !== loadToken) return;
     const name = file.name.toLowerCase();
     const cleanTitle = file.name.replace(/\.(epub|pdf)$/i, "").replace(/[_-]+/g, " ").trim();
     currentBookId = slugify(cleanTitle);
@@ -552,18 +643,23 @@ async function handleLocalFile(e) {
       const blob = new Blob([buffer], { type: "application/epub+zip" });
       const url = URL.createObjectURL(blob);
       currentObjectUrl = url;
-      await loadEpubFromUrl(url, cleanTitle);
+      await loadEpubFromUrl(url, cleanTitle, myToken);
     } else if (name.endsWith(".pdf") || file.type === "application/pdf") {
-      await loadPDF(buffer, cleanTitle);
+      await loadPDF(buffer, cleanTitle, myToken);
     } else {
       alert("Formato no compatible. Solo PDF o EPUB.");
+      cancelarCarga();
+      return;
     }
+    if (myToken !== loadToken) return;
     restoreBookmarkIfAny();
   } catch (err) {
+    if (myToken !== loadToken) return;
     console.error(err);
     alert("El archivo parece dañado o protegido.");
+    cancelarCarga();
   } finally {
-    hideLoader();
+    if (myToken === loadToken) hideLoader();
     els.fileInput.value = "";
   }
 }
@@ -583,25 +679,28 @@ function restoreBookmarkIfAny() {
 }
 
 /* ------------------------------------------------------------
-   EPUB: carga segura con espera de layout
+   EPUB — Blob URL + espera de layout + timeout
    ------------------------------------------------------------ */
-async function loadEpubFromUrl(url, title) {
+async function loadEpubFromUrl(url, title, myToken) {
   cleanup();
   isEpub = true;
   currentBookTitle = title;
   openReader(title);
 
-  // CRÍTICO: Esperar a que el DOM tenga dimensiones reales.
-  // Sin esto, epub.js entra en condición de carrera y no renderiza.
+  if (myToken !== loadToken) return;
+
+  // CRÍTICO: esperar a que el lector tenga dimensiones reales antes de renderizar.
   await new Promise(r => requestAnimationFrame(() => r()));
   await wait(400);
+  if (myToken !== loadToken) return;
 
   currentEpub = ePub(url);
   await currentEpub.ready;
+  if (myToken !== loadToken) return;
 
   rendition = currentEpub.renderTo("reader", {
     width: "100%",
-    height: Math.max(window.innerHeight - 200, 400),
+    height: Math.max(window.innerHeight - 200, 420),
     flow: "scrolled-doc",
     spread: "none",
     allowScriptedContent: false
@@ -623,49 +722,56 @@ async function loadEpubFromUrl(url, title) {
   }
 
   rendition.on("rendered", refreshVisibleText);
-  rendition.on("relocated", (loc) => {
+  rendition.on("relocated", () => {
     refreshVisibleText();
-    syncProgressFromEpub(loc);
+    syncProgressFromEpub();
     saveReadingState();
+    updateBookmarkButton();
   });
 
-  await rendition.display();
+  // Race: si display() no resuelve en 20s, cancelamos sin atrapar al usuario.
+  await Promise.race([
+    rendition.display(),
+    new Promise((_, reject) => {
+      loadTimeout = setTimeout(() => reject(new Error("EPUB_TIMEOUT")), 20000);
+    })
+  ]);
+  clearTimeout(loadTimeout);
+  loadTimeout = null;
+
+  if (myToken !== loadToken) return;
+
   refreshVisibleText();
   syncProgressFromEpub();
   saveReadingState();
   els.title.textContent = title;
+  updateBookmarkButton();
 }
 
-function syncProgressFromEpub(loc) {
+function syncProgressFromEpub() {
   try {
-    const location = loc || rendition?.currentLocation();
-    const pct = location?.start?.percentage;
-    if (typeof pct === "number" && !isNaN(pct)) {
-      updateProgressUI(pct * 100);
-    }
-  } catch (_) {}
-}
-
-function estimateEpubProgressFromSeek(percent) {
-  if (!currentEpub || !rendition) return;
-  try {
-    const cfi = currentEpub.locations?.cfiFromPercentage?.(percent / 100);
-    if (cfi) rendition.display(cfi);
+    const loc = rendition?.currentLocation?.();
+    if (!loc?.start?.cfi || !currentEpub?.spine?.spineItems?.length) return;
+    const total = currentEpub.spine.spineItems.length;
+    const idx = Math.max(0, loc.start.index || 0);
+    updateProgressUI(((idx + 1) / total) * 100);
   } catch (_) {}
 }
 
 /* ------------------------------------------------------------
    PDF
    ------------------------------------------------------------ */
-async function loadPDF(buffer, title) {
+async function loadPDF(buffer, title, myToken) {
   cleanup();
   isEpub = false;
   currentBookTitle = title;
   currentPDF = await pdfjsLib.getDocument({ data: buffer }).promise;
+  if (myToken !== loadToken) return;
   currentPage = 1;
   openReader(title);
   await renderPDFPage();
   saveReadingState();
+  updateBookmarkButton();
 }
 
 async function renderPDFPage() {
@@ -691,26 +797,33 @@ async function renderPDFPage() {
 }
 
 /* ------------------------------------------------------------
-   NAVEGACIÓN DE PÁGINAS
+   NAVEGACIÓN, ZOOM, EXTRACCIÓN DE TEXTO
    ------------------------------------------------------------ */
-function prevPage() {
-  if (isEpub && rendition) { rendition.prev(); return; }
-  if (currentPDF && currentPage > 1) {
+async function prevPage() {
+  stopVoice();
+  if (isEpub && rendition) {
+    try { await rendition.prev(); } catch (_) {}
+    refreshVisibleText();
+    syncProgressFromEpub();
+  } else if (currentPDF && currentPage > 1) {
     currentPage--;
-    renderPDFPage().catch(() => {});
+    await renderPDFPage();
   }
+  saveReadingState();
 }
-function nextPage() {
-  if (isEpub && rendition) { rendition.next(); return; }
-  if (currentPDF && currentPage < currentPDF.numPages) {
+async function nextPage() {
+  stopVoice();
+  if (isEpub && rendition) {
+    try { await rendition.next(); } catch (_) {}
+    refreshVisibleText();
+    syncProgressFromEpub();
+  } else if (currentPDF && currentPage < currentPDF.numPages) {
     currentPage++;
-    renderPDFPage().catch(() => {});
+    await renderPDFPage();
   }
+  saveReadingState();
 }
 
-/* ------------------------------------------------------------
-   ZOOM
-   ------------------------------------------------------------ */
 function zoomIn() {
   if (isEpub) {
     epubFontPercent = clamp(epubFontPercent + 10, 80, 200);
@@ -737,9 +850,6 @@ function applyEpubFont() {
   }
 }
 
-/* ------------------------------------------------------------
-   EXTRACCIÓN DE TEXTO VISIBLE
-   ------------------------------------------------------------ */
 function refreshVisibleText() {
   currentText = extractVisibleText();
 }
@@ -750,21 +860,29 @@ function extractVisibleText() {
       const iframes = els.readerDiv.querySelectorAll("iframe");
       const parts = [];
       iframes.forEach(iframe => {
-        try {
-          const doc = iframe.contentDocument || iframe.contentWindow?.document;
-          if (doc?.body) parts.push(doc.body.innerText || doc.body.textContent || "");
-        } catch (_) {}
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        const text = doc?.body?.innerText?.trim();
+        if (text) parts.push(text);
       });
-      return parts.join("\n").replace(/\s+/g, " ").trim();
-    } catch (_) { return ""; }
+      const merged = parts.join(" ").replace(/\s+/g, " ").trim();
+      if (merged) return merged;
+    } catch (_) {}
   }
-  return currentText || "";
+  return (currentText || "").trim();
 }
 
 function onProgressSeek(e) {
+  scheduleProgressAutoHide();
   const value = Number(e.target.value);
-  if (isEpub && rendition) {
-    estimateEpubProgressFromSeek(value);
+  if (isEpub) {
+    const spineItems = currentEpub?.spine?.spineItems || [];
+    if (!spineItems.length || !rendition) return;
+    const targetIndex = Math.min(spineItems.length - 1, Math.floor((value / 100) * spineItems.length));
+    const item = spineItems[targetIndex];
+    const cfi = item?.cfiBase ? `${item.cfiBase}!` : null;
+    if (cfi) {
+      try { rendition.display(cfi); } catch (_) {}
+    }
   } else if (currentPDF) {
     const targetPage = Math.max(1, Math.min(currentPDF.numPages, Math.round((value / 100) * currentPDF.numPages)));
     if (targetPage !== currentPage) {
@@ -777,7 +895,7 @@ function onProgressSeek(e) {
 }
 
 /* ============================================================
-   MOTOR DE MÚSICA — Web Audio API
+   MOTOR DE MÚSICA — Web Audio API (cálida y suave)
    ============================================================ */
 function getTrackById(id) {
   return MUSIC_TRACKS.find(track => track.id === id) || MUSIC_TRACKS[0];
@@ -788,11 +906,14 @@ async function ensureMusicContext() {
     musicContext = new (window.AudioContext || window.webkitAudioContext)();
     musicCompressor = musicContext.createDynamicsCompressor();
     musicMasterGain = musicContext.createGain();
-    musicCompressor.threshold.value = -24;
-    musicCompressor.knee.value = 22;
-    musicCompressor.ratio.value = 6;
-    musicCompressor.attack.value = 0.004;
-    musicCompressor.release.value = 0.25;
+
+    // Compresor muy suave para evitar picos pero conservar calidez
+    musicCompressor.threshold.value = -28;
+    musicCompressor.knee.value = 32;
+    musicCompressor.ratio.value = 4;
+    musicCompressor.attack.value = 0.01;
+    musicCompressor.release.value = 0.4;
+
     musicMasterGain.gain.value = musicVolume;
     musicMasterGain.connect(musicCompressor);
     musicCompressor.connect(musicContext.destination);
@@ -801,35 +922,39 @@ async function ensureMusicContext() {
     await musicContext.resume();
   }
   if (musicMasterGain) {
-    musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.03);
+    musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.04);
   }
 }
 
 function setMusicVolume(value) {
-  musicVolume = clamp(Number(value), 0.2, 2.0);
+  musicVolume = clamp(Number(value), 0.3, 1.4);
   localStorage.setItem("santuario_music_volume", String(musicVolume));
   if (musicMasterGain && musicContext) {
-    musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.03);
+    musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.04);
   }
 }
 
 function playTone(ctx, destination, startTime, freq, duration, opts = {}) {
+  // SOLO sine y triangle por defecto. Si llega sawtooth/square, se ignora.
+  const safeWave = (opts.waveform === "sine" || opts.waveform === "triangle") ? opts.waveform : "sine";
+
   const osc = ctx.createOscillator();
-  osc.type = opts.waveform || "sine";
+  osc.type = safeWave;
   osc.frequency.setValueAtTime(freq, startTime);
 
   const filter = ctx.createBiquadFilter();
-  filter.type = opts.filter || "lowpass";
-  filter.frequency.setValueAtTime(opts.cutoff || 1800, startTime);
-  filter.Q.value = opts.q || 0.8;
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(opts.cutoff || 900, startTime);
+  filter.Q.value = opts.q || 0.6;
 
   const gain = ctx.createGain();
-  const peak = opts.gain ?? 0.14;
-  const attack = opts.attack ?? 0.03;
-  const release = opts.release ?? 0.28;
+  const peak = opts.gain ?? 0.08;
+  const attack = opts.attack ?? 0.5;    // ataques largos = sin clicks
+  const release = opts.release ?? 1.5;  // caídas largas = fundido
 
   gain.gain.setValueAtTime(0.0001, startTime);
   gain.gain.exponentialRampToValueAtTime(Math.max(peak, 0.0002), startTime + attack);
+  gain.gain.setValueAtTime(Math.max(peak, 0.0002), startTime + Math.max(attack, duration * 0.6));
   gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration + release);
 
   osc.connect(filter);
@@ -845,12 +970,12 @@ function playTone(ctx, destination, startTime, freq, duration, opts = {}) {
   }
 
   osc.start(startTime);
-  osc.stop(startTime + duration + release + 0.05);
+  osc.stop(startTime + duration + release + 0.1);
 }
 
 function playChord(ctx, destination, startTime, freqs, duration, opts = {}) {
   freqs.forEach((freq, index) => {
-    playTone(ctx, destination, startTime + index * 0.015, freq, duration, opts);
+    playTone(ctx, destination, startTime + index * 0.04, freq, duration, opts);
   });
 }
 
@@ -859,7 +984,7 @@ function stopMusic(updateButton = true) {
   clearTimeout(musicLoopHandle);
   musicLoopHandle = null;
   if (musicContext && musicMasterGain) {
-    try { musicMasterGain.gain.setTargetAtTime(0.0001, musicContext.currentTime, 0.02); } catch (_) {}
+    try { musicMasterGain.gain.setTargetAtTime(0.0001, musicContext.currentTime, 0.06); } catch (_) {}
   }
   if (updateButton) {
     els.btnMusica.classList.remove("activo");
@@ -872,7 +997,7 @@ function scheduleMusic(track) {
   clearTimeout(musicLoopHandle);
   const loop = () => {
     if (!musicPlaying || !musicContext || !musicMasterGain) return;
-    const start = musicContext.currentTime + 0.05;
+    const start = musicContext.currentTime + 0.1;
     track.perform(musicContext, musicMasterGain, start);
     musicLoopHandle = setTimeout(loop, track.loopMs);
   };
@@ -889,23 +1014,20 @@ async function startMusic(trackId) {
   musicPlaying = true;
   els.btnMusica.classList.add("activo");
   els.btnMusica.setAttribute("aria-pressed", "true");
-  // Subir ganancia al volumen elegido (puede haber bajado al silenciar)
   if (musicMasterGain && musicContext) {
-    musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.05);
+    musicMasterGain.gain.setTargetAtTime(musicVolume, musicContext.currentTime, 0.08);
   }
   renderMusicBoard();
   scheduleMusic(track);
 }
 
 async function toggleMusic() {
-  // Crítico: este handler DEBE ser disparado por gesto del usuario (click).
-  // Por eso ensureMusicContext() funciona aquí (resume() requiere gesto).
-  const selectedId = musicCurrentTrackId || MUSIC_TRACKS[0].id;
+  // Debe disparar desde gesto del usuario (click). Aquí sí.
   if (musicPlaying) {
     stopMusic();
     return;
   }
-  await startMusic(selectedId);
+  await startMusic(musicCurrentTrackId || MUSIC_TRACKS[0].id);
 }
 
 async function selectMusic(id) {
@@ -952,65 +1074,13 @@ function stopVoice() { speechSynthesis.cancel(); }
 /* ============================================================
    ✧ ANÁLISIS RACIONAL DE LECTURA
    ------------------------------------------------------------
-   No copia frases sueltas. Pondera oraciones por:
-   - longitud útil (no ruido)
-   - densidad de palabras clave (keywords del texto)
-   - posición (apertura y cierre pesan algo más)
-   Devuelve: idea principal, ideas secundarias, palabras clave,
-   interpretación y pregunta abierta para el lector.
+   Ranking semántico:
+   - score += keyword_matches × 2
+   - score += 1.5 si longitud útil (60-260 chars)
+   - score += 0.5 si es primera o última oración (peso narrativo)
+   Devuelve: idea principal, ideas secundarias (3),
+   palabras clave (chips), interpretación, pregunta abierta.
    ============================================================ */
-function analyzeText() {
-  let text = extractVisibleText();
-  if (!text || text.length < 120) {
-    alert("Se necesita más texto visible en pantalla para generar el análisis.");
-    return;
-  }
-
-  const sentences = segmentSentences(text);
-  if (sentences.length < 2) {
-    alert("Avanza un poco la lectura para tener más contenido que analizar.");
-    return;
-  }
-
-  const keywords = topKeywords(text, 8);
-  const ranked = rankSentencesBySemantic(sentences, keywords);
-
-  const mainIdea = shortenSentence(ranked[0]?.sentence || sentences[0]);
-  const secondaryIdeas = ranked.slice(1, 4)
-    .map(r => shortenSentence(r.sentence))
-    .filter(s => s && s !== mainIdea);
-
-  const interpretation = buildInterpretation(mainIdea, secondaryIdeas, keywords);
-  const question = buildQuestion(keywords, mainIdea);
-
-  els.iaContent.innerHTML = `
-    <h4>Idea principal</h4>
-    <p>${escapeHtml(mainIdea)}</p>
-
-    <h4>Ideas secundarias</h4>
-    ${secondaryIdeas.length
-      ? `<ul>${secondaryIdeas.map(s => `<li>${escapeHtml(s)}</li>`).join("")}</ul>`
-      : `<p>No se detectaron ideas secundarias claras en el fragmento visible. Avanza la lectura para enriquecer el análisis.</p>`
-    }
-
-    <h4>Palabras clave</h4>
-    <div class="ia-keywords">
-      ${keywords.length
-        ? keywords.map(k => `<span class="ia-keyword">${escapeHtml(k)}</span>`).join("")
-        : `<span class="ia-keyword">sin clave dominante</span>`
-      }
-    </div>
-
-    <h4>Interpretación</h4>
-    <p>${escapeHtml(interpretation)}</p>
-
-    <h4>Pregunta para el lector</h4>
-    <p>${escapeHtml(question)}</p>
-  `;
-  els.iaModal.classList.remove("hidden");
-}
-
-/* ---- Algoritmos del análisis ---- */
 function segmentSentences(text) {
   const clean = String(text).replace(/\s+/g, " ").trim();
   if (!clean) return [];
@@ -1033,9 +1103,7 @@ function topKeywords(text, limit = 8) {
     .filter(w => w.length > 3 && !STOPWORDS.has(w));
 
   const freq = new Map();
-  for (const w of words) {
-    freq.set(w, (freq.get(w) || 0) + 1);
-  }
+  for (const w of words) freq.set(w, (freq.get(w) || 0) + 1);
   return [...freq.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, limit)
@@ -1047,15 +1115,14 @@ function rankSentencesBySemantic(sentences, keywords) {
   return sentences.map((sentence, idx) => {
     const lower = sentence.toLowerCase();
     let score = 0;
-    // Densidad de keywords
     for (const k of keywords) {
-      const matches = lower.match(new RegExp(`\\b${k}\\b`, "g"));
+      // Escapar regex en caso de acentos especiales
+      const safe = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const matches = lower.match(new RegExp(`\\b${safe}\\b`, "g"));
       if (matches) score += matches.length * 2;
     }
-    // Longitud útil (penalizar muy cortas o muy largas)
     const len = sentence.length;
     if (len >= 60 && len <= 260) score += 1.5;
-    // Bonus de apertura/cierre
     if (idx === 0 || idx === total - 1) score += 0.5;
     return { sentence, score, idx };
   }).sort((a, b) => b.score - a.score || a.idx - b.idx);
@@ -1072,28 +1139,78 @@ function buildInterpretation(mainIdea, secondaryIdeas, keywords) {
   const focus = keywords.slice(0, 3).join(", ") || "la voz, el silencio y la mirada";
   const partes = [];
   partes.push(`El fragmento gira en torno a ${focus}.`);
-  if (mainIdea) {
-    partes.push(`La idea central propone una afirmación que organiza el resto del texto.`);
-  }
-  if (secondaryIdeas.length) {
-    partes.push(`Alrededor aparecen capas que matizan, contradicen o profundizan esa afirmación, sosteniendo el ritmo de la lectura.`);
-  }
-  partes.push(`Como acompañante de lectura, se sugiere observar no solo lo que el texto afirma sino también lo que omite, repite o insinúa.`);
+  if (mainIdea) partes.push(`La idea central organiza el resto del texto y le da dirección interpretativa.`);
+  if (secondaryIdeas.length) partes.push(`Las ideas secundarias matizan, amplían o tensan esa idea principal.`);
+  partes.push(`Como acompañante de lectura, conviene observar no solo lo que el texto afirma, sino también lo que omite, repite o insinúa.`);
   return partes.join(" ");
 }
 
 function buildQuestion(keywords, mainIdea) {
   if (keywords.length >= 2) {
-    return `¿Cómo cambia tu lectura si entendés ${keywords[0]} no como un concepto suelto, sino en relación con ${keywords[1]}?`;
+    return `¿Cómo cambia tu lectura si entendés "${keywords[0]}" no como un concepto suelto, sino en relación con "${keywords[1]}"?`;
   }
   if (keywords.length === 1) {
     return `¿Qué se desplaza en el texto si "${keywords[0]}" se entiende como su núcleo silencioso?`;
   }
-  return `¿Qué sentido se abre si este fragmento se lee como escena y no solo como información?`;
+  if (mainIdea) {
+    return `¿Qué cambia si este fragmento se lee como escena o tensión, en lugar de verlo solo como información?`;
+  }
+  return `¿Qué sentido se abre si este fragmento se lee con más pausa y menos prisa?`;
+}
+
+function analyzeText() {
+  let text = extractVisibleText();
+  if (!text || text.length < 120) {
+    alert("Se necesita más texto visible en pantalla para generar el análisis. Avanzá la lectura un poco.");
+    return;
+  }
+
+  const sentences = segmentSentences(text);
+  if (sentences.length < 2) {
+    alert("El fragmento es demasiado breve. Avanzá la lectura para enriquecer el análisis.");
+    return;
+  }
+
+  const keywords = topKeywords(text, 8);
+  const ranked = rankSentencesBySemantic(sentences, keywords);
+
+  const mainIdea = shortenSentence(ranked[0]?.sentence || sentences[0]);
+  const secondaryIdeas = ranked.slice(1, 4)
+    .map(r => shortenSentence(r.sentence))
+    .filter(s => s && s !== mainIdea);
+
+  const interpretation = buildInterpretation(mainIdea, secondaryIdeas, keywords);
+  const question = buildQuestion(keywords, mainIdea);
+
+  els.iaContent.innerHTML = `
+    <h4>Idea principal</h4>
+    <p>${escapeHtml(mainIdea || "No se pudo extraer una idea principal clara.")}</p>
+
+    <h4>Ideas secundarias</h4>
+    ${secondaryIdeas.length
+      ? `<ul>${secondaryIdeas.map(s => `<li>${escapeHtml(s)}</li>`).join("")}</ul>`
+      : `<p>No se detectaron ideas secundarias claras. Avanzá la lectura para enriquecer el análisis.</p>`
+    }
+
+    <h4>Palabras clave</h4>
+    <div class="ia-keywords">
+      ${keywords.length
+        ? keywords.map(k => `<span class="ia-keyword">${escapeHtml(k)}</span>`).join("")
+        : `<span class="ia-keyword">sin claves dominantes</span>`
+      }
+    </div>
+
+    <h4>Interpretación</h4>
+    <p>${escapeHtml(interpretation)}</p>
+
+    <h4>Pregunta para el lector</h4>
+    <p>${escapeHtml(question)}</p>
+  `;
+  els.iaModal.classList.remove("hidden");
 }
 
 /* ============================================================
-   PERSISTENCIA DEL ESTADO DE LECTURA
+   PERSISTENCIA
    ============================================================ */
 function saveReadingState() {
   if (!currentBookId) return;
@@ -1112,11 +1229,8 @@ function saveReadingState() {
 
 function loadSavedState(bookId) {
   if (!bookId) return null;
-  try {
-    return JSON.parse(localStorage.getItem(`santuario_state_${bookId}`) || "null");
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(localStorage.getItem(`santuario_state_${bookId}`) || "null"); }
+  catch { return null; }
 }
 
 function applySavedState() {
@@ -1128,9 +1242,7 @@ function applySavedState() {
   if (isEpub) applyEpubFont();
 }
 
-window.addEventListener("beforeunload", () => {
-  saveReadingState();
-});
+window.addEventListener("beforeunload", saveReadingState);
 
 /* ============================================================
    BOOTSTRAP
