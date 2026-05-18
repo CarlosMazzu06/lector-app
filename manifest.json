@@ -1,12 +1,1 @@
-{
-  "name": "Santuario Literario",
-  "short_name": "Literario",
-  "start_url": "./index.html",
-  "display": "fullscreen",
-  "background_color": "#0A0402",
-  "theme_color": "#C5A059",
-  "description": "Lector inmersivo de EPUB y PDF con música suave, búsqueda y análisis racional.",
-  "lang": "es-AR",
-  "orientation": "any",
-  "icons": []
-}
+{"name":"Santuario Literario","short_name":"Literario","start_url":"./index.html","display":"fullscreen","background_color":"#0A0402","theme_color":"#C5A059","lang":"es-AR","orientation":"any","icons":[]}
