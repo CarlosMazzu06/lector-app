@@ -20,10 +20,12 @@
   <div class="bg-wood"></div>
   <div class="glass-overlay"></div>
 
+  <!-- ====== LOADER CON SALIDA SEGURA ====== -->
   <div id="loader" class="loader hidden" aria-live="polite">
     <div class="spinner"></div>
     <div id="loaderText" class="loader-text">Preparando manuscrito…</div>
     <div id="loaderSubtext" class="loader-subtext"></div>
+    <button class="loader-cancel" onclick="cancelarCarga()" aria-label="Detener carga">✕ Detener y volver</button>
   </div>
 
   <!-- ====== PANTALLA INICIO ====== -->
@@ -32,15 +34,22 @@
       <header class="hero">
         <div class="logo-mark">✑</div>
         <h1>Santuario Literario</h1>
-        <p class="bajada">Lectura inmersiva, música y análisis</p>
+        <p class="bajada">Lectura inmersiva, música cálida y análisis racional</p>
       </header>
 
       <div class="divider">⚜</div>
 
       <h2 class="section-title">Biblioteca del repositorio</h2>
-      <p class="section-desc">Lectura automática de la carpeta /book</p>
+      <p class="section-desc">Sincronización automática con la carpeta /book</p>
       <div id="bookGrid" class="book-grid">
-        <p class="grid-msg">Sincronizando con el archivo principal…</p>
+        <p class="grid-msg">Sincronizando biblioteca…</p>
+      </div>
+
+      <div id="continueWrap" class="continue-wrap hidden">
+        <div class="divider">⚜</div>
+        <h2 class="section-title">Continuar lectura</h2>
+        <p class="section-desc">Tus señaladores guardados</p>
+        <div id="continueGrid" class="continue-grid"></div>
       </div>
 
       <div class="divider">⚜</div>
@@ -51,12 +60,6 @@
         <span>✍</span> Seleccionar PDF o EPUB
         <input type="file" id="fileInput" accept=".pdf,.epub" hidden />
       </label>
-
-      <div id="continueWrap" class="continue-wrap hidden">
-        <div class="divider">⚜</div>
-        <h2 class="section-title">Continuar lectura</h2>
-        <div id="continueGrid" class="continue-grid"></div>
-      </div>
     </div>
   </div>
 
@@ -65,19 +68,22 @@
     <nav class="top-nav">
       <button class="nav-btn nav-btn-big" onclick="goHome()" title="Volver al inicio" aria-label="Volver">✕</button>
       <div id="currentTitle" class="title-obra">Lectura</div>
-      <button class="nav-btn nav-btn-big" onclick="toggleSettings()" title="Ajustes" aria-label="Ajustes">⚙</button>
+      <div class="nav-right">
+        <button class="nav-btn nav-btn-big" onclick="toggleProgressBar()" title="Mostrar progreso y señalador" aria-label="Progreso">📖</button>
+        <button class="nav-btn nav-btn-big" onclick="toggleSettings()" title="Ajustes" aria-label="Ajustes">⚙</button>
+      </div>
     </nav>
 
     <div id="readerContainer">
       <div id="reader"></div>
     </div>
 
-    <!-- UBICADOR DE LECTURA -->
-    <div id="progressBarWrap" class="progress-wrap" aria-label="Ubicador de lectura">
+    <!-- UBICADOR DE LECTURA — RETRÁCTIL (oculto por defecto) -->
+    <div id="progressBarWrap" class="progress-wrap hidden" aria-label="Ubicador de lectura">
       <div class="progress-head">
-        <span id="readingClock" title="Tiempo en esta sesión">⏱ 00:00</span>
+        <span id="readingClock">⏱ 00:00</span>
         <span id="progressLabel">0%</span>
-        <button id="bookmarkBtn" class="bookmark-btn" onclick="toggleBookmark()" title="Marcar / Quitar señalador" aria-label="Marcador">🕮</button>
+        <button id="bookmarkBtn" class="bookmark-btn" onclick="toggleBookmark()" title="Marcar o quitar señalador" aria-label="Marcador">🕮</button>
       </div>
       <input id="progressBar" class="progress-bar" type="range" min="0" max="100" value="0" aria-label="Progreso de lectura" />
       <div id="bookmarkInfo" class="bookmark-info"></div>
@@ -106,7 +112,7 @@
       <div class="setting-group">
         <label>Tamaño del texto</label>
         <div class="zoom-controls">
-          <button onclick="zoomOut()">A-</button>
+          <button onclick="zoomOut()">A−</button>
           <button onclick="zoomIn()">A+</button>
         </div>
       </div>
@@ -121,27 +127,27 @@
         <select id="voiceRateSelect" class="select-field">
           <option value="0.85">Lenta</option>
           <option value="0.95" selected>Normal</option>
-          <option value="1.10">Ágil</option>
-          <option value="1.25">Rápida</option>
+          <option value="1.05">Ágil</option>
+          <option value="1.20">Rápida</option>
         </select>
       </div>
 
       <div class="setting-group">
         <label>Música ambiental</label>
         <div id="musicBoard" class="music-board"></div>
-        <div id="musicNow" class="music-now">Toca una pieza para iniciarla.</div>
+        <div id="musicNow" class="music-now">Tocá una pieza para iniciarla.</div>
       </div>
 
       <div class="setting-group">
         <label>Volumen musical</label>
-        <input id="musicVolume" class="range-field" type="range" min="0.2" max="2.0" step="0.05" value="1.15">
+        <input id="musicVolume" class="range-field" type="range" min="0.3" max="1.4" step="0.05" value="0.85">
       </div>
 
       <button class="primary-btn" onclick="toggleSettings()">Cerrar ajustes</button>
     </div>
   </div>
 
-  <!-- ====== MODAL ANÁLISIS DE IDEAS ====== -->
+  <!-- ====== MODAL ANÁLISIS RACIONAL ====== -->
   <div id="iaModal" class="modal hidden" aria-hidden="true">
     <div class="modal-content ia-panel">
       <div class="modal-header">
@@ -149,7 +155,7 @@
         <button class="modal-close dark" onclick="closeIaModal()" aria-label="Cerrar análisis">✕</button>
       </div>
       <div id="iaContent" class="ia-text"></div>
-      <button class="primary-btn" onclick="closeIaModal()">Continuar leyendo</button>
+      <button class="primary-btn primary-btn-ia" onclick="closeIaModal()">Continuar leyendo</button>
     </div>
   </div>
 
