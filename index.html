@@ -18,6 +18,7 @@
 <div class="glass-overlay"></div>
 
 <div id="loader" class="loader hidden" aria-live="polite">
+  <div class="ornament">⚜</div>
   <div class="spinner"></div>
   <div id="loaderText" class="loader-text">Preparando manuscrito…</div>
   <div id="loaderSubtext" class="loader-subtext"></div>
@@ -29,7 +30,7 @@
     <header class="hero">
       <div class="logo-mark">✑</div>
       <h1>Santuario Literario</h1>
-      <p class="bajada">Lectura inmersiva, música suave y análisis</p>
+      <p class="bajada">Lectura inmersiva, ambiente cálido y análisis</p>
     </header>
     <div class="divider">⚜</div>
     <h2 class="section-title">Biblioteca del repositorio</h2>
@@ -44,26 +45,26 @@
     <h2 class="section-title">Cargar obra local</h2>
     <label class="btn-pluma">
       <span>✍</span> Seleccionar PDF o EPUB
-      <input type="file" id="fileInput" accept=".pdf,.epub" hidden />
+      <input type="file" id="fileInput" accept=".pdf,.epub,application/epub+zip" hidden />
     </label>
   </div>
 </div>
 
 <div id="readerScreen" class="pantalla oculta">
   <nav class="top-nav" id="topNav">
-    <button class="nav-btn nav-btn-big" onclick="goHome()" title="Volver" aria-label="Volver">✕</button>
+    <button class="nav-btn" onclick="goHome()" title="Volver" aria-label="Volver">✕</button>
     <div id="currentTitle" class="title-obra">Lectura</div>
     <div class="nav-right">
-      <button class="nav-btn nav-btn-big" onclick="toggleFocus()" id="focusBtn" title="Modo foco" aria-label="Foco">👁</button>
-      <button class="nav-btn nav-btn-big" onclick="toggleSearchBar()" title="Buscar" aria-label="Buscar">🔍</button>
-      <button class="nav-btn nav-btn-big" onclick="toggleProgressBar()" title="Progreso" aria-label="Progreso">📖</button>
-      <button class="nav-btn nav-btn-big" onclick="toggleSettings()" title="Ajustes" aria-label="Ajustes">⚙</button>
+      <button class="nav-btn" onclick="toggleFocus()" id="focusBtn" title="Modo foco" aria-label="Foco">👁</button>
+      <button class="nav-btn" onclick="toggleSearchBar()" title="Buscar" aria-label="Buscar">⌕</button>
+      <button class="nav-btn" onclick="toggleProgressBar()" title="Progreso" aria-label="Progreso">📖</button>
+      <button class="nav-btn" onclick="toggleSettings()" title="Ajustes" aria-label="Ajustes">⚙</button>
     </div>
   </nav>
 
   <div id="searchBar" class="search-bar hidden">
-    <input id="searchInput" type="search" placeholder="Buscar en la página visible…" />
-    <button onclick="executeSearch()" title="Buscar">↵</button>
+    <input id="searchInput" type="search" placeholder="Buscar en la página…" />
+    <button onclick="executeSearch()" title="Buscar">⌕</button>
     <button onclick="clearSearch()" title="Limpiar">✕</button>
     <span id="searchCount" class="search-count"></span>
   </div>
@@ -81,8 +82,8 @@
   </div>
 
   <div class="dock" id="mainDock">
-    <button onclick="prevPage()" title="Anterior" aria-label="Anterior">←</button>
-    <button onclick="nextPage()" title="Siguiente" aria-label="Siguiente">→</button>
+    <button onclick="prevPage()" title="Anterior" aria-label="Anterior">◂</button>
+    <button onclick="nextPage()" title="Siguiente" aria-label="Siguiente">▸</button>
     <span class="dock-divider"></span>
     <button id="btn-musica" onclick="toggleMusic()" title="Música" aria-label="Música">♪</button>
     <button onclick="playVoice()" title="Leer" aria-label="Leer">▶</button>
@@ -95,9 +96,10 @@
 <div id="settingsModal" class="modal hidden">
   <div class="modal-content">
     <div class="modal-header">
-      <h3 class="modal-title">Ajustes de lectura</h3>
+      <h3 class="modal-title">Ajustes</h3>
       <button class="modal-close" onclick="toggleSettings()" aria-label="Cerrar">✕</button>
     </div>
+
     <div class="setting-group">
       <label>Tamaño del texto</label>
       <div class="zoom-controls">
@@ -105,15 +107,17 @@
         <button onclick="zoomIn()">A+</button>
       </div>
     </div>
+
     <div class="setting-group">
       <label>Tipografía</label>
       <select id="fontProfile" class="select-field" onchange="changeFontProfile(this.value)">
-        <option value="garamond">Cormorant Garamond (clásica)</option>
-        <option value="playfair">Playfair Display (elegante)</option>
-        <option value="atkinson">Atkinson Hyperlegible (accesible)</option>
+        <option value="garamond">Garamond (clásica)</option>
+        <option value="playfair">Playfair (elegante)</option>
+        <option value="atkinson">Hyperlegible (accesible)</option>
         <option value="georgia">Georgia (sistema)</option>
       </select>
     </div>
+
     <div class="setting-group">
       <label>Tema del lector</label>
       <div class="theme-row">
@@ -122,12 +126,27 @@
         <button class="theme-chip" data-theme="noche" onclick="setReaderTheme('noche')">Noche</button>
       </div>
     </div>
+
+    <div class="setting-group">
+      <label>Idioma de la voz</label>
+      <select id="voiceLangSelect" class="select-field">
+        <option value="es">Español (todas las variantes)</option>
+        <option value="en">English (all)</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+        <option value="it">Italiano</option>
+        <option value="pt">Português</option>
+        <option value="all">Mostrar todas las voces</option>
+      </select>
+    </div>
+
     <div class="setting-group">
       <label>Voz narradora</label>
       <select id="voiceSelect" class="select-field"></select>
     </div>
+
     <div class="setting-group">
-      <label>Velocidad de voz</label>
+      <label>Velocidad</label>
       <select id="voiceRateSelect" class="select-field">
         <option value="0.85">Lenta</option>
         <option value="0.95" selected>Normal</option>
@@ -135,15 +154,18 @@
         <option value="1.25">Rápida</option>
       </select>
     </div>
+
     <div class="setting-group">
       <label>Música ambiental</label>
       <div id="musicBoard" class="music-board"></div>
       <div id="musicNow" class="music-now">Tocá una pieza para iniciarla.</div>
     </div>
+
     <div class="setting-group">
       <label>Volumen musical</label>
-      <input id="musicVolume" class="range-field" type="range" min="0.2" max="1.4" step="0.05" value="0.7">
+      <input id="musicVolume" class="range-field" type="range" min="0.2" max="1.4" step="0.05" value="0.85">
     </div>
+
     <button class="primary-btn" onclick="toggleSettings()">Cerrar</button>
   </div>
 </div>
